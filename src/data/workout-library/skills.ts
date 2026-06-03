@@ -1,0 +1,242 @@
+import type { LibraryWorkout } from '@/types/workout';
+
+export const SKILLS_WORKOUTS: LibraryWorkout[] = [
+  {
+    id: 'SKL-001',
+    name: 'SkiErg Focus',
+    category: 'skills',
+    description: 'Ski erg efficiency paired with wall balls.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['ski_erg', 'wall_ball'],
+    focusAreas: ['ski technique', 'shoulder endurance'],
+    workoutType: 'ski erg efficiency',
+    warmup: `Easy ski drills and light wall balls`,
+    mainSet: `4 x 250m SkiErg
+3 x 10 Wall Balls`,
+    cooldown: `Easy row or ski, lat and shoulder stretch`,
+  },
+  {
+    id: 'SKL-002',
+    name: 'Burpee Focus',
+    category: 'skills',
+    description: 'Burpee capacity with running transitions.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['running'],
+    focusAreas: ['burpee efficiency', 'transition speed'],
+    workoutType: 'burpee station prep',
+    warmup: `Easy jog and slow burpee broad jumps`,
+    mainSet: `4 rounds
+200m run
+12 Burpee Broad Jumps`,
+    cooldown: `Walk, hip flexor stretch`,
+  },
+  {
+    id: 'SKL-003',
+    name: 'Lunge Focus',
+    category: 'skills',
+    description: 'Walking lunge volume for HYROX leg fatigue.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focusAreas: ['walking lunges', 'leg endurance'],
+    workoutType: 'lunge station endurance',
+    warmup: `Easy jog and bodyweight walking lunges`,
+    mainSet: `4 rounds
+300m run
+20 Walking Lunges`,
+    cooldown: `Walk, quad and hip flexor stretch`,
+  },
+  {
+    id: 'SKL-004',
+    name: 'Rowing Efficiency',
+    category: 'skills',
+    description: 'Row technique and pacing for 1000m station splits.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['rower'],
+    focusAreas: ['row technique', 'stroke rate', 'pacing'],
+    workoutType: 'rowing technique & pacing',
+    warmup: `Easy row with legs-only and arms-only drills`,
+    mainSet: `4 x 250m RowErg
+1 x 500m RowErg`,
+    cooldown: `Easy row and lat stretch`,
+  },
+  {
+    id: 'SKL-005',
+    name: 'Sled Push Technique',
+    category: 'skills',
+    description: 'Sled push mechanics and repeatability under control.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['sled', 'running'],
+    focusAreas: ['sled push', 'body angle', 'leg drive'],
+    workoutType: 'sled push skill',
+    warmup: `Easy jog and empty sled push`,
+    mainSet: `8 x 12.5m Sled Push`,
+    cooldown: `Walk, quad stretch`,
+  },
+  {
+    id: 'SKL-006',
+    name: 'Sled Pull Technique',
+    category: 'skills',
+    description: 'Sled pull rope mechanics and hip hinge pattern.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['sled', 'running'],
+    focusAreas: ['sled pull', 'rope hand position', 'posterior chain'],
+    workoutType: 'sled pull skill',
+    warmup: `Easy row, banded face pulls, light sled pull`,
+    mainSet: `8 x 12.5m Sled Pull`,
+    cooldown: `Easy row, lat and hamstring stretch`,
+  },
+  {
+    id: 'SKL-007',
+    name: 'Wall Ball Unbroken',
+    category: 'skills',
+    description: 'Wall ball pacing and unbroken set strategy.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['wall_ball', 'running'],
+    focusAreas: ['wall ball', 'breathing', 'set breaking'],
+    workoutType: 'wall ball pacing skill',
+    warmup: `Easy jog and light wall balls`,
+    mainSet: `4 rounds
+300m run
+20 Wall Balls`,
+    cooldown: `Shoulder and wrist stretch, walk`,
+  },
+  {
+    id: 'SKL-008',
+    name: 'Burpee Breakdown',
+    category: 'skills',
+    description: 'Burpee technique at low fatigue — step-back and full reps before race volume.',
+    difficulty: 'beginner',
+    duration: 30,
+    equipment: ['running_optional'],
+    focusAreas: ['burpee form', 'step-back option', 'rhythm'],
+    workoutType: 'burpee technique — beginner',
+    warmup: `Walk and burpee movement pieces`,
+    mainSet: `2 rounds
+5 step-back burpees
+5 burpee broad jumps
+2 rounds
+8 step-back burpees
+8 burpee broad jumps`,
+    cooldown: `Walk and hip flexor stretch`,
+  },
+  {
+    id: 'SKL-009',
+    name: 'Farmer Carry Endurance',
+    category: 'skills',
+    description: 'Grip and posture for farmer carry station between runs.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['dumbbells', 'kettlebells', 'running'],
+    focusAreas: ['farmer carry', 'grip', 'posture'],
+    workoutType: 'farmer carry skill',
+    warmup: `Easy jog and light farmer carry`,
+    mainSet: `5 rounds
+300m run
+40m Farmers Carry`,
+    cooldown: `Forearm stretch and walk`,
+  },
+  {
+    id: 'SKL-010',
+    name: 'Sandbag Carry Prep',
+    category: 'skills',
+    description: 'Loaded carry variations when sled or farmers are limited.',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['sandbag_optional', 'dumbbells'],
+    focusAreas: ['loaded carry', 'grip', 'core bracing'],
+    workoutType: 'carry substitution skill',
+    warmup: `Walk and goblet hold bracing drill`,
+    mainSet: `6 x 30m sandbag or farmer carry`,
+    cooldown: `Grip stretch and easy walk`,
+  },
+  {
+    id: 'SKL-011',
+    name: 'Ski Negative Split',
+    category: 'skills',
+    description: 'Advanced ski pacing — faster second half each piece.',
+    difficulty: 'advanced',
+    duration: 45,
+    equipment: ['ski_erg'],
+    focusAreas: ['ski pacing', 'power endurance'],
+    workoutType: 'ski erg pacing — advanced',
+    warmup: `Easy ski and negative split practice`,
+    mainSet: `4 x 500m SkiErg`,
+    cooldown: `Easy row or ski`,
+  },
+  {
+    id: 'SKL-012',
+    name: 'Reverse Lunge Station',
+    category: 'skills',
+    description: 'Reverse lunge volume as walking lunge race prep variant.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['running', 'dumbbells_optional'],
+    focusAreas: ['lunges', 'quad endurance', 'balance'],
+    workoutType: 'lunge variation skill',
+    warmup: `Easy jog and reverse lunges`,
+    mainSet: `4 rounds
+400m run
+24 Reverse Lunges`,
+    cooldown: `Hip flexor and quad stretch, walk`,
+  },
+  {
+    id: 'SKL-013',
+    name: 'Row-Ski Transition',
+    category: 'skills',
+    description: 'Practice quick transitions between row and ski stations.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['rower', 'ski_erg'],
+    focusAreas: ['transitions', 'upper body pacing'],
+    workoutType: 'station transition skill',
+    warmup: `Easy row, easy ski, practice transition`,
+    mainSet: `5 rounds
+300m RowErg
+300m SkiErg`,
+    cooldown: `Easy walk or row, shoulder stretch`,
+  },
+  {
+    id: 'SKL-014',
+    name: 'Burpee Ladder',
+    category: 'skills',
+    description: 'Advanced burpee density with controlled rest.',
+    difficulty: 'advanced',
+    duration: 45,
+    equipment: ['running'],
+    focusAreas: ['burpee capacity', 'mental pacing'],
+    workoutType: 'burpee density — advanced',
+    warmup: `Easy jog and smooth burpee broad jumps`,
+    mainSet: `300m run
+10 Burpee Broad Jumps
+300m run
+12 Burpee Broad Jumps
+300m run
+14 Burpee Broad Jumps
+300m run
+16 Burpee Broad Jumps
+300m run
+18 Burpee Broad Jumps`,
+    cooldown: `Easy walk and hip flexor stretch`,
+  },
+  {
+    id: 'SKL-015',
+    name: 'Sandbag Wall Ball',
+    category: 'skills',
+    description: 'Wall ball with sandbag thruster substitute for limited equipment.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['wall_ball', 'sandbag_optional'],
+    focusAreas: ['squat to press', 'shoulder endurance'],
+    workoutType: 'wall ball / thruster skill',
+    warmup: `Easy bike, light wall balls or sandbag thrusters`,
+    mainSet: `6 x 12 Wall Balls`,
+    cooldown: `Shoulder and wrist stretch, easy walk`,
+  },
+];

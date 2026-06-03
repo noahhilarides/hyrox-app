@@ -1,0 +1,3117 @@
+# HYROX APP — WORKOUT LIBRARY (full export for copy/paste)
+# Generated: 2026-06-02
+
+
+================================================================================
+FILE: src/types/workout.ts
+================================================================================
+/**
+ * Workout library templates (Phase 2 — single source of truth).
+ * Scheduled calendar workouts use `Workout` in `types/index.ts`.
+ */
+
+import type { WorkoutType } from '@/types';
+
+export type WorkoutCategory =
+  | 'running'
+  | 'strength_upper'
+  | 'strength_lower'
+  | 'full_body_strength'
+  | 'hyrox'
+  | 'conditioning'
+  | 'recovery';
+
+export type WorkoutDifficulty = 'beginner' | 'intermediate' | 'advanced';
+
+export interface WorkoutBlock {
+  name: string;
+  detail: string;
+}
+
+/** Library source shape — coaching fields attached in build-library.ts. */
+export type WorkoutTemplateDraft = {
+  id: string;
+  name: string;
+  category: WorkoutCategory;
+  /** One-line intent for coaches and plan selection. */
+  description: string;
+  difficulty: WorkoutDifficulty;
+  /** Target session length in minutes. */
+  duration: number;
+  equipment: string[];
+  focus: string[];
+  workoutBlocks: WorkoutBlock[];
+  /** UI badge type on the calendar. */
+  workoutType: WorkoutType;
+  /**
+   * Selection hint within category (e.g. easy, long, tempo, speed, stations, simulation).
+   * New templates only need category + variant metadata for the coaching engine.
+   */
+  variant?: string;
+  /** Coaching-engine filters (phase, modality, station, level, etc.) */
+  tags?: string[];
+};
+
+export interface WorkoutTemplate extends WorkoutTemplateDraft {
+  tags: string[];
+  /** How to progress this session week over week (coach-written). */
+  progressionNotes: string;
+  /** HYROX station cues inferred from tags — shown on detail / session screens. */
+  coachingCues: string[];
+  /** Standardized equipment swaps for this session. */
+  substitutionGuidance: string;
+  /** Session-level RPE targets when not already spelled out in blocks. */
+  rpeGuidance?: string;
+}
+
+export type WorkoutLibrary = Record<WorkoutCategory, WorkoutTemplate[]>;
+
+/** Phase 1 catalog shape — converted when building the library. */
+/** @deprecated Use WorkoutTemplate — Phase 1 shape retained for legacy catalog files. */
+export type LibraryWorkout = LegacyLibraryWorkout;
+
+export interface LegacyLibraryWorkout {
+  id: string;
+  name: string;
+  category: 'strength' | 'aerobic' | 'speed' | 'skills' | 'hybrid' | 'engine' | 'recovery';
+  description: string;
+  difficulty: WorkoutDifficulty;
+  duration: number;
+  equipment: string[];
+  focusAreas: string[];
+  workoutType: string;
+  warmup: string;
+  mainSet: string;
+  cooldown: string;
+  /** Populated from tag registry when the catalog is built — omit in source files. */
+  tags?: string[];
+  /** Populated from coaching metadata when the catalog is built — omit in source files. */
+  progressionNotes?: string;
+  coachingCues?: string[];
+  substitutionGuidance?: string;
+  rpeGuidance?: string;
+}
+
+================================================================================
+FILE: src/lib/workout-library/legacy-convert.ts
+================================================================================
+import type {
+  LegacyLibraryWorkout,
+  WorkoutCategory,
+  WorkoutTemplateDraft,
+} from '@/types/workout';
+import type { WorkoutType } from '@/types';
+
+function blocksFromLegacy(w: LegacyLibraryWorkout) {
+  const mainLines = w.mainSet.split('\n').filter(Boolean);
+  return [
+    { name: 'Warm-up', detail: w.warmup.replace(/\n/g, ' · ') },
+    ...mainLines.map((line, i) => ({
+      name: i === 0 ? 'Main set' : `Block ${i + 1}`,
+      detail: line,
+    })),
+    { name: 'Cool-down', detail: w.cooldown.replace(/\n/g, ' · ') },
+  ];
+}
+
+function inferVariant(w: LegacyLibraryWorkout): string | undefined {
+  const text = `${w.name} ${w.workoutType} ${w.description}`.toLowerCase();
+  if (w.category === 'recovery') return undefined;
+  if (w.category === 'speed') return 'speed';
+  if (w.category === 'engine') return 'simulation';
+  if (w.category === 'skills') return 'stations';
+  if (text.includes('long') || text.includes('endurance') && w.duration >= 60) return 'long';
+  if (text.includes('tempo') || text.includes('threshold')) return 'tempo';
+  if (text.includes('easy') || text.includes('zone 2') || text.includes('recovery flush')) return 'easy';
+  if (text.includes('simulation') || text.includes('race')) return 'simulation';
+  if (text.includes('upper') || text.includes('bench') || text.includes('press') && !text.includes('leg')) {
+    return 'upper';
+  }
+  if (text.includes('full body') || text.includes('foundation') || text.includes('circuit')) {
+    return 'full_body';
+  }
+  if (w.category === 'strength') return 'lower';
+  return undefined;
+}
+
+function mapCategory(w: LegacyLibraryWorkout): WorkoutCategory {
+  const variant = inferVariant(w);
+  switch (w.category) {
+    case 'aerobic':
+    case 'speed':
+      return 'running';
+    case 'strength':
+      if (variant === 'upper') return 'strength_upper';
+      if (variant === 'full_body') return 'full_body_strength';
+      return 'strength_lower';
+    case 'skills':
+    case 'hybrid':
+    case 'engine':
+      return 'hyrox';
+    case 'recovery':
+      return 'recovery';
+    default:
+      return 'conditioning';
+  }
+}
+
+function inferWorkoutType(w: LegacyLibraryWorkout, category: WorkoutCategory): WorkoutType {
+  if (category === 'running') {
+    const v = inferVariant(w);
+    return v === 'speed' ? 'speed' : 'run';
+  }
+  if (category === 'recovery') return 'recovery';
+  if (category === 'conditioning') return 'conditioning';
+  if (category === 'hyrox') {
+    return inferVariant(w) === 'simulation' ? 'race_sim' : 'hyrox';
+  }
+  if (category === 'strength_upper' || category === 'strength_lower' || category === 'full_body_strength') {
+    return 'strength';
+  }
+  return 'conditioning';
+}
+
+export function convertLegacyWorkout(w: LegacyLibraryWorkout): WorkoutTemplateDraft {
+  const category = mapCategory(w);
+  return {
+    id: w.id,
+    name: w.name,
+    category,
+    description: w.description,
+    difficulty: w.difficulty,
+    duration: w.duration,
+    equipment: w.equipment,
+    focus: w.focusAreas,
+    workoutBlocks: blocksFromLegacy(w),
+    workoutType: inferWorkoutType(w, category),
+    variant: inferVariant(w),
+    tags: w.tags ?? [],
+  };
+}
+
+export function convertLegacyCatalog(workouts: LegacyLibraryWorkout[]): WorkoutTemplateDraft[] {
+  return workouts.map(convertLegacyWorkout);
+}
+
+================================================================================
+FILE: src/data/workout-library.ts
+================================================================================
+/**
+ * Workout library barrel — templates built in `./workout-library/build-library.ts`.
+ */
+export {
+  ALL_LIBRARY_WORKOUTS,
+  ALL_WORKOUT_TEMPLATES,
+  getTemplateById,
+  getWorkoutById,
+  getWorkoutsByCategory,
+  getWorkoutsByTag,
+  WORKOUT_CATEGORIES,
+  WORKOUT_LIBRARY,
+  GENERATOR_TEMPLATES,
+  AEROBIC_WORKOUTS,
+  ENGINE_WORKOUTS,
+  HYBRID_WORKOUTS,
+  RECOVERY_WORKOUTS,
+  SKILLS_WORKOUTS,
+  SPEED_WORKOUTS,
+  STRENGTH_WORKOUTS,
+} from './workout-library/index';
+
+================================================================================
+FILE: src/data/workout-library/index.ts
+================================================================================
+export {
+  ALL_WORKOUT_TEMPLATES,
+  getTemplateById,
+  getWorkoutById,
+  getWorkoutsByCategory,
+  getWorkoutsByTag,
+  WORKOUT_CATEGORIES,
+  WORKOUT_LIBRARY,
+} from './build-library';
+
+export { GENERATOR_TEMPLATES } from './generator-templates';
+export { LEGACY_CATALOG } from './legacy-catalog';
+
+// Phase 1 module exports (legacy shape files — consumed via LEGACY_CATALOG)
+export { STRENGTH_WORKOUTS } from './strength';
+export { AEROBIC_WORKOUTS } from './aerobic';
+export { SPEED_WORKOUTS } from './speed';
+export { SKILLS_WORKOUTS } from './skills';
+export { HYBRID_WORKOUTS } from './hybrid';
+export { ENGINE_WORKOUTS } from './engine';
+export { RECOVERY_WORKOUTS } from './recovery';
+
+/** @deprecated Use ALL_WORKOUT_TEMPLATES */
+export { ALL_WORKOUT_TEMPLATES as ALL_LIBRARY_WORKOUTS } from './build-library';
+
+================================================================================
+FILE: src/data/workout-library/build-library.ts
+================================================================================
+import { convertLegacyCatalog } from '@/lib/workout-library/legacy-convert';
+import type { WorkoutCategory, WorkoutTemplate } from '@/types/workout';
+
+import { GENERATOR_TEMPLATES } from './generator-templates';
+import { LEGACY_CATALOG } from './legacy-catalog';
+import { attachCoachingToTemplates } from './coaching-metadata';
+import { attachTagsToTemplates } from './tags';
+
+function dedupeById(templates: WorkoutTemplate[]): WorkoutTemplate[] {
+  const map = new Map<string, WorkoutTemplate>();
+  for (const t of templates) {
+    if (!map.has(t.id)) map.set(t.id, t);
+  }
+  return [...map.values()];
+}
+
+const CONVERTED_LEGACY = attachCoachingToTemplates(convertLegacyCatalog(LEGACY_CATALOG));
+
+const TAGGED_GENERATOR_TEMPLATES = attachCoachingToTemplates(
+  attachTagsToTemplates(GENERATOR_TEMPLATES)
+);
+
+export const ALL_WORKOUT_TEMPLATES: WorkoutTemplate[] = dedupeById([
+  ...CONVERTED_LEGACY,
+  ...TAGGED_GENERATOR_TEMPLATES,
+]);
+
+const CATEGORIES: WorkoutCategory[] = [
+  'running',
+  'strength_upper',
+  'strength_lower',
+  'full_body_strength',
+  'hyrox',
+  'conditioning',
+  'recovery',
+];
+
+export const WORKOUT_LIBRARY: Record<WorkoutCategory, WorkoutTemplate[]> = CATEGORIES.reduce(
+  (acc, category) => {
+    acc[category] = ALL_WORKOUT_TEMPLATES.filter((t) => t.category === category);
+    return acc;
+  },
+  {} as Record<WorkoutCategory, WorkoutTemplate[]>
+);
+
+export { CATEGORIES as WORKOUT_CATEGORIES };
+
+export function getTemplateById(id: string): WorkoutTemplate | undefined {
+  return ALL_WORKOUT_TEMPLATES.find((t) => t.id === id);
+}
+
+export function getWorkoutsByCategory(category: WorkoutCategory): WorkoutTemplate[] {
+  return WORKOUT_LIBRARY[category] ?? [];
+}
+
+/** All library templates that include the given tag (case-sensitive). */
+export function getWorkoutsByTag(tag: string): WorkoutTemplate[] {
+  return ALL_WORKOUT_TEMPLATES.filter((t) => t.tags.includes(tag));
+}
+
+/** @deprecated Use getTemplateById */
+export const getWorkoutById = getTemplateById;
+
+================================================================================
+FILE: src/data/workout-library/legacy-catalog.ts
+================================================================================
+import type { LegacyLibraryWorkout } from '@/types/workout';
+
+import { AEROBIC_WORKOUTS } from './aerobic';
+import { ENGINE_WORKOUTS } from './engine';
+import { HYBRID_WORKOUTS } from './hybrid';
+import { RECOVERY_WORKOUTS } from './recovery';
+import { SKILLS_WORKOUTS } from './skills';
+import { SPEED_WORKOUTS } from './speed';
+import { STRENGTH_WORKOUTS } from './strength';
+import { attachTagsToLegacy } from './tags';
+
+/** Flat Phase 1 catalog — converted to WorkoutTemplate at library build time. */
+export const LEGACY_CATALOG: LegacyLibraryWorkout[] = attachTagsToLegacy([
+  ...STRENGTH_WORKOUTS,
+  ...AEROBIC_WORKOUTS,
+  ...SPEED_WORKOUTS,
+  ...SKILLS_WORKOUTS,
+  ...HYBRID_WORKOUTS,
+  ...ENGINE_WORKOUTS,
+  ...RECOVERY_WORKOUTS,
+]);
+
+================================================================================
+FILE: src/data/workout-library/strength.ts
+================================================================================
+import type { LibraryWorkout } from '@/types/workout';
+
+export const STRENGTH_WORKOUTS: LibraryWorkout[] = [
+  {
+    id: 'STR-001',
+    name: 'Heavy Lower Body',
+    category: 'strength',
+    description: 'Max-strength lower body with carries for hybrid durability.',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['barbell', 'dumbbells', 'sled_optional'],
+    focusAreas: ['squat strength', 'posterior chain', 'grip endurance'],
+    workoutType: 'max strength — lower body',
+    warmup: `5 min bike\nDynamic mobility (hips, ankles, T-spine)`,
+    mainSet: `Back Squat — 5×5 @ RPE 8\nRomanian Deadlift — 4×8\nWalking Lunges — 3×20 steps\nFarmer Carry — 4×40m`,
+    cooldown: `Lower-body stretch — 8–10 min`,
+  },
+  {
+    id: 'STR-002',
+    name: 'Sled Power',
+    category: 'strength',
+    description: 'Leg strength and sled-specific power for HYROX stations.',
+    difficulty: 'intermediate',
+    duration: 55,
+    equipment: ['barbell', 'sled', 'rower'],
+    focusAreas: ['sled push', 'single-leg strength', 'core stability'],
+    workoutType: 'sled power',
+    warmup: `5 min row\nLeg swing + hip opener series`,
+    mainSet: `Front Squat — 5×3 @ RPE 8\nSled Push — 6×20m (heavy, full extension each step)\nBulgarian Split Squat — 3×10 each leg\nPlank — 3×60 sec`,
+    cooldown: `Mobility — hips and quads`,
+  },
+  {
+    id: 'STR-003',
+    name: 'Full Body Strength',
+    category: 'strength',
+    description: 'Balanced full-body strength for hybrid athletes.',
+    difficulty: 'intermediate',
+    duration: 65,
+    equipment: ['barbell', 'pull-up bar', 'dumbbells'],
+    focusAreas: ['deadlift', 'pressing', 'pulling', 'carry capacity'],
+    workoutType: 'full-body strength',
+    warmup: `5 min row or bike\nMovement prep: deadlift pattern, scap pull-ups`,
+    mainSet: `Deadlift — 5×5 @ RPE 8\nBench Press — 4×6\nPull-Ups — 4×AMRAP (leave 1–2 reps in reserve)\nFarmer Carry — 4×40m`,
+    cooldown: `Full-body stretch`,
+  },
+  {
+    id: 'STR-004',
+    name: 'Goblet Foundation',
+    category: 'strength',
+    description: 'Beginner-friendly squat and hinge — learn patterns you will use under fatigue at wall ball and lunge stations.',
+    difficulty: 'beginner',
+    duration: 40,
+    equipment: ['dumbbells', 'kettlebell_optional'],
+    focusAreas: ['squat pattern', 'hinge pattern', 'core bracing'],
+    workoutType: 'movement foundation — strength',
+    warmup: `5 min brisk walk\nGoblet squat × 10, RDL × 10 (light)`,
+    mainSet: `Goblet Squat — 4×12\nDB Romanian Deadlift — 4×10\nDB Floor Press — 3×12\nDead Bug — 3×10 each side`,
+    cooldown: `5 min stretch — hips and hamstrings`,
+  },
+  {
+    id: 'STR-005',
+    name: 'Upper Push & Pull',
+    category: 'strength',
+    description: 'Balanced upper push and pull for SkiErg and sled work — equal row volume to every press.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['barbell', 'dumbbells', 'pull-up bar'],
+    focusAreas: ['horizontal push', 'vertical pull', 'shoulder stability'],
+    workoutType: 'upper-body strength balance',
+    warmup: `Band pull-aparts × 15\nPush-up × 10\nScapular pull-ups × 8`,
+    mainSet: `Bench Press — 4×8 @ RPE 7\nBarbell Row — 4×8\nDB Shoulder Press — 3×10\nFace Pulls — 3×15`,
+    cooldown: `Chest and lat stretch`,
+  },
+  {
+    id: 'STR-006',
+    name: 'Trap Bar Strength',
+    category: 'strength',
+    description: 'Trap-bar deadlift focus with lower back-friendly loading.',
+    difficulty: 'intermediate',
+    duration: 55,
+    equipment: ['trap_bar', 'dumbbells'],
+    focusAreas: ['deadlift strength', 'grip', 'posterior chain'],
+    workoutType: 'deadlift strength — trap bar',
+    warmup: `5 min bike\nTrap bar RDL × 8, light trap bar DL × 5`,
+    mainSet: `Trap Bar Deadlift — 5×5 @ RPE 8\nSingle-Leg RDL (DB) — 3×8 each\nPallof Press — 3×12 each side\nSuitcase Carry — 3×30m each hand`,
+    cooldown: `Hamstring and hip flexor mobility`,
+  },
+  {
+    id: 'STR-007',
+    name: 'Sled Pull Strength',
+    category: 'strength',
+    description: 'Posterior chain and sled-pull specific pulling strength.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['sled', 'rower', 'dumbbells'],
+    focusAreas: ['sled pull', 'hamstrings', 'lat strength'],
+    workoutType: 'sled pull strength',
+    warmup: `5 min row\nHip hinge drills + banded rows`,
+    mainSet: `Sled Pull — 8×15m (heavy, low hips)\nBarbell or DB Row — 4×8\nHamstring Curl (band or machine) — 3×12\nReverse Plank — 3×30 sec`,
+    cooldown: `Substitute if no sled: heavy DB bent-over row 5×8`,
+  },
+  {
+    id: 'STR-008',
+    name: 'Overhead & Core',
+    category: 'strength',
+    description: 'Overhead stability for wall balls — pair every press with scapular control for shoulder durability.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['dumbbells', 'barbell_optional', 'wall_ball'],
+    focusAreas: ['overhead stability', 'core anti-rotation', 'shoulder endurance'],
+    workoutType: 'overhead stability',
+    warmup: `PVC pass-throughs × 10\nWall ball × 15 (light)\nDead bug × 8`,
+    mainSet: `Push Press or DB Push Press — 5×5\nWall Ball — 5×15 (controlled unbroken sets)\nTurkish Get-Up — 2×3 each side (light)\nHollow Hold — 3×30 sec`,
+    cooldown: `Shoulder mobility`,
+  },
+  {
+    id: 'STR-009',
+    name: 'Hip Thrust & Hamstring',
+    category: 'strength',
+    description: 'Glute and hamstring strength for running and sled work.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['barbell', 'bench', 'dumbbells'],
+    focusAreas: ['glute power', 'hamstring strength', 'hip extension'],
+    workoutType: 'posterior chain development',
+    warmup: `Glute bridges × 15\nBodyweight good mornings × 10`,
+    mainSet: `Barbell Hip Thrust — 4×8 @ RPE 8\nRomanian Deadlift — 4×8\nCopenhagen Plank — 3×20 sec each\nStep-Ups — 3×10 each leg (moderate load)`,
+    cooldown: `Glute and hamstring stretch`,
+  },
+  {
+    id: 'STR-010',
+    name: 'Wall Ball Strength Endurance',
+    category: 'strength',
+    description: 'Leg and shoulder endurance specific to wall ball station.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['wall_ball', 'dumbbells'],
+    focusAreas: ['wall ball', 'squat endurance', 'shoulder stamina'],
+    workoutType: 'wall ball strength endurance',
+    warmup: `5 min bike\nWall ball × 20 (light), goblet squat × 10`,
+    mainSet: `Wall Ball — 6×20 (rest 90 sec, aim same pace each set)\nGoblet Squat — 3×15\nDB Push Press — 3×12\nFront Rack Hold — 3×45 sec (KB or DB)`,
+    cooldown: `Substitute: thrusters with light DB if no wall ball`,
+  },
+  {
+    id: 'STR-011',
+    name: 'Beginner DB Circuit',
+    category: 'strength',
+    description: 'Simple full-body circuit — equal push, pull, and legs to build HYROX-ready habits.',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['dumbbells'],
+    focusAreas: ['full body', 'work capacity', 'technique'],
+    workoutType: 'general strength base',
+    warmup: `5 min walk\nArm circles, bodyweight squats × 10`,
+    mainSet: `3 rounds:\n10 DB Squats\n10 DB Press (floor or bench)\n10 DB Rows each arm\n10 Step-Ups each leg\nRest 90 sec`,
+    cooldown: `Full-body stretch`,
+  },
+  {
+    id: 'STR-012',
+    name: 'Squat Wave',
+    category: 'strength',
+    description: 'Advanced squat wave loading for peak leg strength.',
+    difficulty: 'advanced',
+    duration: 70,
+    equipment: ['barbell', 'rack'],
+    focusAreas: ['squat max strength', 'leg drive', 'bracing'],
+    workoutType: 'advanced squat strength',
+    warmup: `10 min bike + barbell warmup sets`,
+    mainSet: `Back Squat wave: 5 @ 75%, 3 @ 85%, 2 @ 90%, 1 @ 92%\nPause Squat — 3×3 @ 70%\nNordic Curl (assisted) — 3×6\nFarmer Carry — 4×50m heavy`,
+    cooldown: `Long lower-body mobility`,
+  },
+  {
+    id: 'STR-013',
+    name: 'Heavy Deadlift & Carry',
+    category: 'strength',
+    description: 'Advanced pulling strength with grip-limited carries.',
+    difficulty: 'advanced',
+    duration: 65,
+    equipment: ['barbell', 'dumbbells', 'trap_bar_optional'],
+    focusAreas: ['deadlift max', 'grip strength', 'hyrox carry prep'],
+    workoutType: 'max deadlift + carry',
+    warmup: `Row 5 min\nDeadlift ramp: 5-3-2-1 @ increasing load`,
+    mainSet: `Deadlift — work to heavy 3 rep @ RPE 9\nDeficit Deadlift (2") — 3×5 @ 75%\nFarmer Carry — 6×40m (heavy)\nBarbell Hold — 3×20 sec`,
+    cooldown: `Posterior chain stretch + grip release`,
+  },
+  {
+    id: 'STR-014',
+    name: 'Single-Leg Strength',
+    category: 'strength',
+    description: 'Unilateral leg strength for lunge station and injury resilience.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['dumbbells', 'bench'],
+    focusAreas: ['single-leg strength', 'lunge pattern', 'balance'],
+    workoutType: 'unilateral leg strength',
+    warmup: `5 min jog\nReverse lunges × 8 each, lateral band walks`,
+    mainSet: `Bulgarian Split Squat — 4×8 each @ RPE 8\nSingle-Leg RDL — 3×10 each\nWalking Lunges — 3×24 steps (moderate DBs)\nCalf Raises — 3×15`,
+    cooldown: `Hip flexor and quad stretch`,
+  },
+  {
+    id: 'STR-015',
+    name: 'Hybrid Strength Complex',
+    category: 'strength',
+    description: 'Advanced complex pairing strength lifts with race movements.',
+    difficulty: 'advanced',
+    duration: 60,
+    equipment: ['barbell', 'wall_ball', 'sled_optional'],
+    focusAreas: ['strength-power', 'race movements', 'fatigue resistance'],
+    workoutType: 'strength complex — race prep',
+    warmup: `10 min progressive cardio + barbell warmup`,
+    mainSet: `4 complexes (rest 3 min between):\n5 Front Squats @ moderate-heavy\n10 Wall Balls\n20m Sled Push (substitute: 20 heavy walking lunges)\n8 Pull-Ups or Rows`,
+    cooldown: `Full recovery walk 8 min`,
+  },
+];
+
+================================================================================
+FILE: src/data/workout-library/aerobic.ts
+================================================================================
+import type { LibraryWorkout } from '@/types/workout';
+
+export const AEROBIC_WORKOUTS: LibraryWorkout[] = [
+  {
+    id: 'AER-001',
+    name: 'Easy Run 45',
+    category: 'aerobic',
+    description: 'Steady Zone 2 run — build the aerobic engine that carries you through eight 1 km legs.',
+    difficulty: 'beginner',
+    duration: 45,
+    equipment: ['running'],
+    focusAreas: ['aerobic base', 'easy pacing'],
+    workoutType: 'aerobic development',
+    warmup: `5 min walk → easy jog\n4×20 sec drills (A-skip, butt kicks)`,
+    mainSet: `45 min Zone 2 run\nConversational pace — nose breathing if possible`,
+    cooldown: `5 min walk + calf / hip flexor stretch`,
+  },
+  {
+    id: 'AER-002',
+    name: 'Long Run 60',
+    category: 'aerobic',
+    description: 'Extended easy run for endurance and fatigue resistance.',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['running'],
+    focusAreas: ['endurance', 'pacing discipline'],
+    workoutType: 'aerobic endurance',
+    warmup: `8 min progressive jog`,
+    mainSet: `60 min conversational pace\nStay relaxed — even splits, no surges`,
+    cooldown: `Walk 5 min + light stretch`,
+  },
+  {
+    id: 'AER-003',
+    name: 'Mixed Aerobic',
+    category: 'aerobic',
+    description: 'Low-intensity cross-modal aerobic work.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running', 'rower'],
+    focusAreas: ['aerobic base', 'movement variety'],
+    workoutType: 'mixed-modal aerobic',
+    warmup: `5 min easy row`,
+    mainSet: `15 min easy run\n15 min easy row\n15 min easy run\nAll segments Zone 2 — consistent effort`,
+    cooldown: `5 min walk + mobility`,
+  },
+  {
+    id: 'AER-004',
+    name: 'Easy Run 30',
+    category: 'aerobic',
+    description: 'Short, confidence-building easy run — walk breaks are part of the plan, not a failure.',
+    difficulty: 'beginner',
+    duration: 30,
+    equipment: ['running'],
+    focusAreas: ['aerobic base', 'consistency'],
+    workoutType: 'aerobic base — short',
+    warmup: `5 min walk / jog mix`,
+    mainSet: `25 min easy jog\nWalk 1 min every 10 min if needed`,
+    cooldown: `5 min walk`,
+  },
+  {
+    id: 'AER-005',
+    name: 'Bike Zone 2',
+    category: 'aerobic',
+    description: 'Low-impact aerobic base on bike when running volume is high.',
+    difficulty: 'beginner',
+    duration: 40,
+    equipment: ['bike'],
+    focusAreas: ['aerobic base', 'joint-friendly cardio'],
+    workoutType: 'aerobic development — bike',
+    warmup: `5 min easy spin`,
+    mainSet: `35 min Zone 2 bike\nRPM 80–90, steady resistance`,
+    cooldown: `5 min easy spin + hip stretch`,
+  },
+  {
+    id: 'AER-006',
+    name: 'Row Aerobic 45',
+    category: 'aerobic',
+    description: 'Steady rowing for HYROX row station aerobic efficiency.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['rower'],
+    focusAreas: ['rowing endurance', 'stroke efficiency'],
+    workoutType: 'rowing aerobic base',
+    warmup: `5 min easy row\n10 strokes @ 22 spm, 10 @ 24 spm`,
+    mainSet: `40 min continuous row @ Zone 2\nFocus: legs-back-arms sequence, relaxed grip`,
+    cooldown: `5 min easy row + lat stretch`,
+  },
+  {
+    id: 'AER-007',
+    name: 'Ski Erg Easy',
+    category: 'aerobic',
+    description: 'Easy ski erg volume for shoulder-friendly aerobic development.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['ski_erg'],
+    focusAreas: ['ski technique', 'aerobic base'],
+    workoutType: 'ski erg aerobic base',
+    warmup: `3 min easy ski\nTechnique: hip hinge, long arms`,
+    mainSet: `30 min easy ski @ conversational effort\nBreak into 5×6 min if shoulders fatigue`,
+    cooldown: `Easy row 5 min (substitute if no ski erg)`,
+  },
+  {
+    id: 'AER-008',
+    name: 'Long Run 75',
+    category: 'aerobic',
+    description: 'Extended aerobic run for race-day running durability.',
+    difficulty: 'advanced',
+    duration: 75,
+    equipment: ['running'],
+    focusAreas: ['endurance', 'mental pacing', 'fueling practice'],
+    workoutType: 'long aerobic endurance',
+    warmup: `10 min progressive jog`,
+    mainSet: `75 min Zone 2\nPractice race fueling at 45 min if training for full HYROX`,
+    cooldown: `10 min walk + stretch`,
+  },
+  {
+    id: 'AER-009',
+    name: 'Run-Row Brick',
+    category: 'aerobic',
+    description: 'Brick session mimicking run-to-row transitions at easy intensity.',
+    difficulty: 'intermediate',
+    duration: 55,
+    equipment: ['running', 'rower'],
+    focusAreas: ['transition efficiency', 'aerobic base'],
+    workoutType: 'brick aerobic — run/row',
+    warmup: `5 min jog + 3 min easy row`,
+    mainSet: `3 rounds:\n12 min easy run\n8 min easy row\nNo rest between — smooth transitions`,
+    cooldown: `Walk 5 min`,
+  },
+  {
+    id: 'AER-010',
+    name: 'Walk-Run 35',
+    category: 'aerobic',
+    description: 'Walk-run intervals — alternate easy jogs and walks until continuous running feels natural.',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['running'],
+    focusAreas: ['run tolerance', 'aerobic entry'],
+    workoutType: 'walk-run aerobic',
+    warmup: `5 min brisk walk`,
+    mainSet: `8 rounds:\n2 min jog\n1 min walk\nKeep jog truly easy`,
+    cooldown: `5 min walk + stretch`,
+  },
+  {
+    id: 'AER-011',
+    name: 'Triple Modal Easy',
+    category: 'aerobic',
+    description: 'Run, row, and ski at Zone 2 for full HYROX modality exposure.',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['running', 'rower', 'ski_erg'],
+    focusAreas: ['multi-modal aerobic', 'station familiarity'],
+    workoutType: 'multi-modal aerobic base',
+    warmup: `5 min easy row`,
+    mainSet: `20 min easy run\n15 min easy row\n15 min easy ski\nSubstitute: duplicate row if no ski erg`,
+    cooldown: `5 min walk`,
+  },
+  {
+    id: 'AER-012',
+    name: 'Progressive Long Run',
+    category: 'aerobic',
+    description: 'Advanced long run with final 20 min at moderate aerobic pace.',
+    difficulty: 'advanced',
+    duration: 90,
+    equipment: ['running'],
+    focusAreas: ['endurance', 'progressive pacing'],
+    workoutType: 'progressive aerobic endurance',
+    warmup: `10 min easy jog`,
+    mainSet: `70 min Zone 2\nFinal 20 min @ upper Zone 2 (steady, not sprint)`,
+    cooldown: `10 min walk + foam roll`,
+  },
+  {
+    id: 'AER-013',
+    name: 'Row-Only Endurance',
+    category: 'aerobic',
+    description: 'Beginner-friendly row volume when running is limited.',
+    difficulty: 'beginner',
+    duration: 40,
+    equipment: ['rower'],
+    focusAreas: ['rowing base', 'posture', 'breathing'],
+    workoutType: 'rowing aerobic — beginner',
+    warmup: `5 min easy row`,
+    mainSet: `30 min row @ easy pace\n2 min rest at 15 min if needed`,
+    cooldown: `5 min easy row`,
+  },
+  {
+    id: 'AER-014',
+    name: 'HYROX Run Volume',
+    category: 'aerobic',
+    description: 'Repeated 1 km efforts at easy pace to simulate race run volume.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running'],
+    focusAreas: ['1k repeat tolerance', 'pacing', 'recovery between efforts'],
+    workoutType: 'race-distance aerobic volume',
+    warmup: `8 min easy jog`,
+    mainSet: `5×1000m @ easy-moderate (Zone 2)\n90 sec walk/jog between\nFocus: same split each rep`,
+    cooldown: `5 min walk`,
+  },
+  {
+    id: 'AER-015',
+    name: 'Recovery Flush',
+    category: 'aerobic',
+    description: 'Very easy movement to promote recovery between hard sessions.',
+    difficulty: 'beginner',
+    duration: 40,
+    equipment: ['running', 'bike_optional'],
+    focusAreas: ['recovery', 'blood flow', 'mobility'],
+    workoutType: 'recovery aerobic',
+    warmup: `None — start very easy`,
+    mainSet: `25 min walk or very easy jog\n10 min easy bike or row\nHeart rate stays low throughout`,
+    cooldown: `5 min stretch + breathing`,
+  },
+];
+
+================================================================================
+FILE: src/data/workout-library/speed.ts
+================================================================================
+import type { LibraryWorkout } from '@/types/workout';
+
+export const SPEED_WORKOUTS: LibraryWorkout[] = [
+  {
+    id: 'SPD-001',
+    name: '400 Repeats',
+    category: 'speed',
+    description: 'Track-style intervals for VO₂ and speed endurance.',
+    difficulty: 'advanced',
+    duration: 50,
+    equipment: ['running'],
+    focusAreas: ['speed endurance', 'lactate tolerance'],
+    workoutType: 'interval speed development',
+    warmup: `10 min easy jog\n4×80m strides (walk back)`,
+    mainSet: `8×400m @ 5K effort\n90 sec rest between reps\nHold consistent split across set`,
+    cooldown: `10 min easy jog`,
+  },
+  {
+    id: 'SPD-002',
+    name: 'Tempo Run',
+    category: 'speed',
+    description: 'Controlled threshold block for race-pace durability.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focusAreas: ['threshold', 'pacing'],
+    workoutType: 'threshold development',
+    warmup: `10 min easy run`,
+    mainSet: `20 min tempo @ comfortably hard (threshold pace)\n10 min easy run`,
+    cooldown: `Light stretch`,
+  },
+  {
+    id: 'SPD-003',
+    name: 'Strides & Easy',
+    category: 'speed',
+    description: 'Strides on an easy run — quick feet for 1 km legs without a hard track session.',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['running'],
+    focusAreas: ['running form', 'leg speed', 'coordination'],
+    workoutType: 'neuromuscular speed — strides',
+    warmup: `8 min easy jog`,
+    mainSet: `20 min easy run\n6×20 sec strides @ 90% effort\nWalk 60 sec between strides`,
+    cooldown: `5 min walk`,
+  },
+  {
+    id: 'SPD-004',
+    name: '200m Repeats',
+    category: 'speed',
+    description: 'Short reps for leg turnover and 1k race speed.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['running'],
+    focusAreas: ['leg speed', 'anaerobic capacity'],
+    workoutType: 'short interval speed',
+    warmup: `10 min easy jog\n4×60m build-ups`,
+    mainSet: `10×200m @ 3K effort\nFull walk-back recovery`,
+    cooldown: `8 min easy jog`,
+  },
+  {
+    id: 'SPD-005',
+    name: '1k Intervals',
+    category: 'speed',
+    description: 'Race-specific 1 km repeats at controlled hard effort.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running'],
+    focusAreas: ['1k pace', 'HYROX run splits'],
+    workoutType: 'race-pace interval — 1k',
+    warmup: `10 min easy jog\n2×200m strides`,
+    mainSet: `4×1000m @ HYROX run pace (hard but repeatable)\n2 min jog recovery`,
+    cooldown: `10 min easy jog`,
+  },
+  {
+    id: 'SPD-006',
+    name: 'Cruise Intervals',
+    category: 'speed',
+    description: 'Threshold intervals with short float recovery.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focusAreas: ['threshold', 'pacing under fatigue'],
+    workoutType: 'cruise threshold intervals',
+    warmup: `10 min easy run`,
+    mainSet: `5×3 min @ threshold\n1 min easy jog between\nHold even pace across all reps`,
+    cooldown: `8 min easy jog`,
+  },
+  {
+    id: 'SPD-007',
+    name: 'Hill Repeats',
+    category: 'speed',
+    description: 'Hill power for strong 1k efforts and sled-adjacent leg drive.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focusAreas: ['hill power', 'knee drive', 'strength-speed'],
+    workoutType: 'hill strength-speed',
+    warmup: `10 min easy jog to moderate hill`,
+    mainSet: `8×45 sec hill @ hard effort\nJog down recovery\nFocus: drive knees, stay tall`,
+    cooldown: `10 min easy flat jog`,
+  },
+  {
+    id: 'SPD-008',
+    name: '800m Repeats',
+    category: 'speed',
+    description: 'Advanced middle-distance reps bridging speed and endurance.',
+    difficulty: 'advanced',
+    duration: 55,
+    equipment: ['running'],
+    focusAreas: ['speed endurance', 'lactate clearance'],
+    workoutType: '800m speed endurance',
+    warmup: `12 min easy jog\n4×100m strides`,
+    mainSet: `6×800m @ 5K–10K effort\n90 sec jog recovery`,
+    cooldown: `10 min easy jog`,
+  },
+  {
+    id: 'SPD-009',
+    name: 'Progression Run',
+    category: 'speed',
+    description: 'Negative-split run building to threshold in final third.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['running'],
+    focusAreas: ['pacing discipline', 'finishing strong'],
+    workoutType: 'progression run — speed',
+    warmup: `8 min easy jog`,
+    mainSet: `30 min progression:\nFirst 10 min easy\nMiddle 10 min moderate\nFinal 10 min @ threshold`,
+    cooldown: `5 min walk`,
+  },
+  {
+    id: 'SPD-010',
+    name: 'Race Pace 1k×5',
+    category: 'speed',
+    description: 'Five 1 km efforts at target HYROX run pace with full recovery.',
+    difficulty: 'advanced',
+    duration: 60,
+    equipment: ['running'],
+    focusAreas: ['race pace', 'repeatability', 'mental focus'],
+    workoutType: 'race-pace specificity — 1k',
+    warmup: `15 min easy jog + drills`,
+    mainSet: `5×1000m @ target HYROX run pace\n3 min walk/jog recovery\nNote splits — aim within 5 sec each rep`,
+    cooldown: `12 min easy jog`,
+  },
+];
+
+================================================================================
+FILE: src/data/workout-library/skills.ts
+================================================================================
+import type { LibraryWorkout } from '@/types/workout';
+
+export const SKILLS_WORKOUTS: LibraryWorkout[] = [
+  {
+    id: 'SKL-001',
+    name: 'SkiErg Focus',
+    category: 'skills',
+    description: 'Ski erg efficiency paired with wall balls.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['ski_erg', 'wall_ball'],
+    focusAreas: ['ski technique', 'shoulder endurance'],
+    workoutType: 'ski erg efficiency',
+    warmup: `5 min easy ski\nTechnique: legs-first drive, relaxed arms`,
+    mainSet: `5 rounds:\n500m Ski Erg\n20 Wall Balls\nRest 2 min between rounds`,
+    cooldown: `Easy row 5 min + shoulder mobility`,
+  },
+  {
+    id: 'SKL-002',
+    name: 'Burpee Focus',
+    category: 'skills',
+    description: 'Burpee capacity with running transitions.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['running'],
+    focusAreas: ['burpee efficiency', 'transition speed'],
+    workoutType: 'burpee station prep',
+    warmup: `5 min easy jog\n10 slow burpees (form focus)`,
+    mainSet: `5 rounds:\n400m Run\n20 Burpees\nRest 90 sec`,
+    cooldown: `Walk 5 min`,
+  },
+  {
+    id: 'SKL-003',
+    name: 'Lunge Focus',
+    category: 'skills',
+    description: 'Walking lunge volume for HYROX leg fatigue.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focusAreas: ['walking lunges', 'leg endurance'],
+    workoutType: 'lunge station endurance',
+    warmup: `5 min jog\nWalking lunges × 10 each leg`,
+    mainSet: `4 rounds:\n400m Run\n40 Walking Lunges\nRest 2 min`,
+    cooldown: `Quad and hip flexor stretch`,
+  },
+  {
+    id: 'SKL-004',
+    name: 'Rowing Efficiency',
+    category: 'skills',
+    description: 'Row technique and pacing for 1000m station splits.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['rower'],
+    focusAreas: ['row technique', 'stroke rate', 'pacing'],
+    workoutType: 'rowing technique & pacing',
+    warmup: `5 min easy row\nDrills: pause at finish, legs-only 10 strokes`,
+    mainSet: `4×500m row\nRest 2 min\nRep 1–2: focus technique @ 24 spm\nRep 3–4: hold race split -5 sec`,
+    cooldown: `5 min easy row`,
+  },
+  {
+    id: 'SKL-005',
+    name: 'Sled Push Technique',
+    category: 'skills',
+    description: 'Sled push mechanics and repeatability under control.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['sled', 'running'],
+    focusAreas: ['sled push', 'body angle', 'leg drive'],
+    workoutType: 'sled push skill',
+    warmup: `5 min jog\nEmpty sled 2×10m (form)`,
+    mainSet: `8×15m sled push @ race weight\nRest 90 sec walk\nCue: low hips, short powerful steps\nSubstitute: heavy DB walking lunges 8×20 steps`,
+    cooldown: `Quad stretch`,
+  },
+  {
+    id: 'SKL-006',
+    name: 'Sled Pull Technique',
+    category: 'skills',
+    description: 'Sled pull rope mechanics and hip hinge pattern.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['sled', 'running'],
+    focusAreas: ['sled pull', 'rope hand position', 'posterior chain'],
+    workoutType: 'sled pull skill',
+    warmup: `5 min row\nBanded face pulls × 15`,
+    mainSet: `8×12.5m sled pull @ race weight\nRest 90 sec\nHands low on rope, sit back, walk backward\nSubstitute: heavy KB or DB row 5×8 each arm`,
+    cooldown: `Lat and hamstring stretch`,
+  },
+  {
+    id: 'SKL-007',
+    name: 'Wall Ball Unbroken',
+    category: 'skills',
+    description: 'Wall ball pacing and unbroken set strategy.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['wall_ball', 'running'],
+    focusAreas: ['wall ball', 'breathing', 'set breaking'],
+    workoutType: 'wall ball pacing skill',
+    warmup: `5 min easy jog\n15 wall balls light`,
+    mainSet: `5 rounds:\n400m Run\n30 Wall Balls (aim 2–3 unbroken sets)\nRest 2 min\nTrack break points each round`,
+    cooldown: `Shoulder mobility`,
+  },
+  {
+    id: 'SKL-008',
+    name: 'Burpee Breakdown',
+    category: 'skills',
+    description: 'Burpee technique at low fatigue — step-back and full reps before race volume.',
+    difficulty: 'beginner',
+    duration: 30,
+    equipment: ['running_optional'],
+    focusAreas: ['burpee form', 'step-back option', 'rhythm'],
+    workoutType: 'burpee technique — beginner',
+    warmup: `5 min walk\nSquat, plank, push-up practice`,
+    mainSet: `3 rounds:\n5 burpees (full)\n10 step-back burpees\n15 air squats\nRest 2 min\nFinish: 3×10 burpees steady pace`,
+    cooldown: `Walk 5 min`,
+  },
+  {
+    id: 'SKL-009',
+    name: 'Farmer Carry Endurance',
+    category: 'skills',
+    description: 'Grip and posture for farmer carry station between runs.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['dumbbells', 'kettlebells', 'running'],
+    focusAreas: ['farmer carry', 'grip', 'posture'],
+    workoutType: 'farmer carry skill',
+    warmup: `5 min jog\nLight carry 2×20m`,
+    mainSet: `5 rounds:\n400m Run\n80m Farmer Carry (race weight or heavier)\nRest 90 sec\nSubstitute: single-arm suitcase carry 40m each hand`,
+    cooldown: `Forearm stretch + walk`,
+  },
+  {
+    id: 'SKL-010',
+    name: 'Sandbag Carry Prep',
+    category: 'skills',
+    description: 'Loaded carry variations when sled or farmers are limited.',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['sandbag_optional', 'dumbbells'],
+    focusAreas: ['loaded carry', 'grip', 'core bracing'],
+    workoutType: 'carry substitution skill',
+    warmup: `5 min walk\nGoblet hold 30 sec × 2`,
+    mainSet: `6×40m carry (sandbag bear hug or heavy DB farmer)\nRest 60 sec\nFocus: tall posture, short quick steps`,
+    cooldown: `Grip stretch`,
+  },
+  {
+    id: 'SKL-011',
+    name: 'Ski Negative Split',
+    category: 'skills',
+    description: 'Advanced ski pacing — faster second half each piece.',
+    difficulty: 'advanced',
+    duration: 45,
+    equipment: ['ski_erg'],
+    focusAreas: ['ski pacing', 'power endurance'],
+    workoutType: 'ski erg pacing — advanced',
+    warmup: `5 min easy ski`,
+    mainSet: `4×750m ski\nRest 2 min\nEach piece: first 375m controlled, second 375m faster\nSubstitute: row same structure`,
+    cooldown: `Easy row 5 min`,
+  },
+  {
+    id: 'SKL-012',
+    name: 'Reverse Lunge Station',
+    category: 'skills',
+    description: 'Reverse lunge volume as walking lunge race prep variant.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['running', 'dumbbells_optional'],
+    focusAreas: ['lunges', 'quad endurance', 'balance'],
+    workoutType: 'lunge variation skill',
+    warmup: `5 min jog\nReverse lunges × 10 each`,
+    mainSet: `4 rounds:\n500m Run\n30 Reverse Lunges (each leg = 1)\nRest 90 sec\nOptional: light DBs`,
+    cooldown: `Hip flexor stretch`,
+  },
+  {
+    id: 'SKL-013',
+    name: 'Row-Ski Transition',
+    category: 'skills',
+    description: 'Practice quick transitions between row and ski stations.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['rower', 'ski_erg'],
+    focusAreas: ['transitions', 'upper body pacing'],
+    workoutType: 'station transition skill',
+    warmup: `3 min row + 3 min ski easy`,
+    mainSet: `5 rounds:\n400m Row\n400m Ski\nRest 90 sec\nMinimize chalk/water breaks — race routine`,
+    cooldown: `Easy bike 5 min if available`,
+  },
+  {
+    id: 'SKL-014',
+    name: 'Burpee Ladder',
+    category: 'skills',
+    description: 'Advanced burpee density with controlled rest.',
+    difficulty: 'advanced',
+    duration: 45,
+    equipment: ['running'],
+    focusAreas: ['burpee capacity', 'mental pacing'],
+    workoutType: 'burpee density — advanced',
+    warmup: `8 min jog\n20 burpees easy`,
+    mainSet: `Ladder: 10-20-30-40-50 burpees\n400m run before each set\nRest 2 min between sets\nGoal: consistent cycle time`,
+    cooldown: `Walk 8 min`,
+  },
+  {
+    id: 'SKL-015',
+    name: 'Sandbag Wall Ball',
+    category: 'skills',
+    description: 'Wall ball with sandbag thruster substitute for limited equipment.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['wall_ball', 'sandbag_optional'],
+    focusAreas: ['squat to press', 'shoulder endurance'],
+    workoutType: 'wall ball / thruster skill',
+    warmup: `5 min bike\n10 wall balls or 10 sandbag thrusters light`,
+    mainSet: `6 rounds:\n15 Wall Balls (or 12 sandbag thrusters)\nRest 60 sec\nFocus: full squat, punch overhead`,
+    cooldown: `Shoulder stretch`,
+  },
+];
+
+================================================================================
+FILE: src/data/workout-library/hybrid.ts
+================================================================================
+import type { LibraryWorkout } from '@/types/workout';
+
+export const HYBRID_WORKOUTS: LibraryWorkout[] = [
+  {
+    id: 'HYB-001',
+    name: 'Hybrid Builder',
+    category: 'hybrid',
+    description: 'Mixed modal circuit building race-specific work capacity.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running', 'wall_ball'],
+    focusAreas: ['work capacity', 'station transitions'],
+    workoutType: 'hybrid conditioning',
+    warmup: `5 min jog + dynamic prep`,
+    mainSet: `3 rounds:\n800m Run\n20 Wall Balls\n20 Lunges\n20 Burpees\nRest 3 min between rounds`,
+    cooldown: `Walk + stretch`,
+  },
+  {
+    id: 'HYB-002',
+    name: 'Strength + Run',
+    category: 'hybrid',
+    description: 'Strength endurance circuit with run intervals.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running', 'kettlebell', 'dumbbells'],
+    focusAreas: ['strength endurance', 'running under fatigue'],
+    workoutType: 'strength-endurance hybrid',
+    warmup: `400m jog + movement prep`,
+    mainSet: `4 rounds:\n400m Run\n15 Goblet Squats\n15 Push Press\n10 Burpees\nRest 2 min`,
+    cooldown: `Easy walk 5 min`,
+  },
+  {
+    id: 'HYB-003',
+    name: 'Run-Burpee-Lunge',
+    category: 'hybrid',
+    description: 'Intro to burpees and lunges with easy runs — same movements, lower density than race day.',
+    difficulty: 'beginner',
+    duration: 40,
+    equipment: ['running'],
+    focusAreas: ['burpees', 'lunges', 'running transitions'],
+    workoutType: 'station trio — beginner hybrid',
+    warmup: `5 min walk/jog\n5 burpees, 10 lunges`,
+    mainSet: `3 rounds:\n600m Run\n15 Burpees\n20 Walking Lunges\nRest 3 min`,
+    cooldown: `Walk 5 min`,
+  },
+  {
+    id: 'HYB-004',
+    name: 'Row-Run Brick',
+    category: 'hybrid',
+    description: 'Alternating row and run at moderate effort.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running', 'rower'],
+    focusAreas: ['row-run transitions', 'pacing'],
+    workoutType: 'row-run hybrid brick',
+    warmup: `5 min easy row + jog`,
+    mainSet: `4 rounds:\n500m Row @ moderate\n600m Run @ moderate\nRest 90 sec`,
+    cooldown: `5 min easy row`,
+  },
+  {
+    id: 'HYB-005',
+    name: 'Ski-Wall Ball',
+    category: 'hybrid',
+    description: 'Upper-body station pairing common in race flow.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['ski_erg', 'wall_ball'],
+    focusAreas: ['ski', 'wall ball', 'shoulder fatigue'],
+    workoutType: 'ski + wall ball hybrid',
+    warmup: `5 min easy ski`,
+    mainSet: `5 rounds:\n500m Ski\n25 Wall Balls\nRest 2 min\nSubstitute: row 500m if no ski`,
+    cooldown: `Shoulder mobility`,
+  },
+  {
+    id: 'HYB-006',
+    name: 'Sled Push + Run',
+    category: 'hybrid',
+    description: 'Sled push repeats with 1k runs between efforts.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running', 'sled'],
+    focusAreas: ['sled push', '1k run', 'leg fatigue'],
+    workoutType: 'sled-run hybrid',
+    warmup: `8 min jog\n2×10m sled push light`,
+    mainSet: `4 rounds:\n1000m Run @ moderate-hard\n4×12.5m Sled Push\nRest 3 min\nSubstitute: 40 heavy walking lunges per round`,
+    cooldown: `Walk + quad stretch`,
+  },
+  {
+    id: 'HYB-007',
+    name: 'Carry & Run',
+    category: 'hybrid',
+    description: 'Farmer carry paired with short runs for grip and legs.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running', 'dumbbells'],
+    focusAreas: ['farmer carry', 'running', 'grip endurance'],
+    workoutType: 'carry-run hybrid',
+    warmup: `5 min jog\n2×20m light carry`,
+    mainSet: `5 rounds:\n400m Run\n60m Farmer Carry\nRest 90 sec`,
+    cooldown: `Forearm stretch`,
+  },
+  {
+    id: 'HYB-008',
+    name: 'Half HYROX Flow',
+    category: 'hybrid',
+    description: 'Half-distance race flow: 4 runs + 4 stations.',
+    difficulty: 'advanced',
+    duration: 65,
+    equipment: ['running', 'rower', 'ski_erg', 'wall_ball'],
+    focusAreas: ['race flow', 'pacing', 'transitions'],
+    workoutType: 'half race flow hybrid',
+    warmup: `10 min mixed easy cardio`,
+    mainSet: `1000m Run → 500m Ski\n1000m Run → 20 Wall Balls\n1000m Run → 500m Row\n1000m Run → 30 Burpees\nModerate-high effort throughout`,
+    cooldown: `10 min walk`,
+  },
+  {
+    id: 'HYB-009',
+    name: 'EMOM Hybrid',
+    category: 'hybrid',
+    description: 'Clock-based work for pacing discipline under time pressure.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['running', 'kettlebell'],
+    focusAreas: ['pacing', 'work capacity', 'time management'],
+    workoutType: 'EMOM hybrid conditioning',
+    warmup: `5 min jog`,
+    mainSet: `20 min EMOM:\nMin 1: 200m Run\nMin 2: 12 KB Swings + 8 Goblet Squats\nMin 3: 10 Burpees\nMin 4: Rest\nRepeat 5 cycles`,
+    cooldown: `Walk 5 min`,
+  },
+  {
+    id: 'HYB-010',
+    name: 'Descending Ladder',
+    category: 'hybrid',
+    description: 'Descending rep ladder with steady runs between sets.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running', 'wall_ball'],
+    focusAreas: ['pacing strategy', 'mental toughness'],
+    workoutType: 'ladder hybrid',
+    warmup: `5 min jog`,
+    mainSet: `5-4-3-2-1 rounds of:\n400m Run\n20-16-12-8-4 Wall Balls\nRest 90 sec between rounds`,
+    cooldown: `Stretch`,
+  },
+  {
+    id: 'HYB-011',
+    name: 'Beginner Circuit',
+    category: 'hybrid',
+    description: 'Confidence-building circuit — incline push-ups and walk/jog are part of the design.',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['running', 'dumbbells_optional'],
+    focusAreas: ['full body', 'confidence', 'transitions'],
+    workoutType: 'intro hybrid circuit',
+    warmup: `5 min walk`,
+    mainSet: `3 rounds:\n400m Walk/jog\n10 Squats\n10 Push-ups (incline ok)\n10 Lunges\n10 Sit-ups\nRest 2 min`,
+    cooldown: `Walk 5 min`,
+  },
+  {
+    id: 'HYB-012',
+    name: 'Sled Pull + Row',
+    category: 'hybrid',
+    description: 'Pulling stations with short run connectors.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running', 'sled', 'rower'],
+    focusAreas: ['sled pull', 'rowing', 'posterior chain'],
+    workoutType: 'pull-station hybrid',
+    warmup: `5 min row + jog`,
+    mainSet: `4 rounds:\n800m Run @ moderate\n250m Row @ hard\n3×12.5m Sled Pull\nRest 3 min\nSubstitute sled pull: heavy rows 3×8`,
+    cooldown: `Easy row 5 min`,
+  },
+  {
+    id: 'HYB-013',
+    name: 'Wall Ball 100',
+    category: 'hybrid',
+    description: 'Century wall ball challenge split across runs.',
+    difficulty: 'advanced',
+    duration: 55,
+    equipment: ['running', 'wall_ball'],
+    focusAreas: ['wall ball volume', 'pacing', 'shoulder endurance'],
+    workoutType: 'wall ball volume hybrid',
+    warmup: `8 min jog\n20 wall balls light`,
+    mainSet: `100 Wall Balls total, partitioned:\nAfter every 20 WB: 600m Run\n4 rounds structure + final 20 WB\nRest only during runs`,
+    cooldown: `Walk + shoulders`,
+  },
+  {
+    id: 'HYB-014',
+    name: 'Tri-Modal 30',
+    category: 'hybrid',
+    description: 'Thirty-minute continuous run-row-ski rotation.',
+    difficulty: 'intermediate',
+    duration: 30,
+    equipment: ['running', 'rower', 'ski_erg'],
+    focusAreas: ['multi-modal', 'steady effort'],
+    workoutType: 'continuous tri-modal hybrid',
+    warmup: `3 min each modality easy`,
+    mainSet: `30 min continuous rotation:\n5 min Run\n5 min Row\n5 min Ski\nRepeat 2× — hold steady moderate effort`,
+    cooldown: `Walk`,
+  },
+  {
+    id: 'HYB-015',
+    name: 'Burpee 80',
+    category: 'hybrid',
+    description: 'Eighty burpees across four runs at race intent.',
+    difficulty: 'advanced',
+    duration: 50,
+    equipment: ['running'],
+    focusAreas: ['burpee volume', 'run pacing'],
+    workoutType: 'burpee volume hybrid',
+    warmup: `8 min jog`,
+    mainSet: `4 rounds:\n800m Run @ moderate-hard\n20 Burpees\nRest 2 min\nAim same burpee time each round`,
+    cooldown: `Walk 8 min`,
+  },
+  {
+    id: 'HYB-016',
+    name: 'Goblet & Grind',
+    category: 'hybrid',
+    description: 'DB and easy runs — build hybrid habits without sleds or a barbell.',
+    difficulty: 'beginner',
+    duration: 40,
+    equipment: ['dumbbells', 'running'],
+    focusAreas: ['strength endurance', 'running'],
+    workoutType: 'dumbbell hybrid',
+    warmup: `5 min jog`,
+    mainSet: `4 rounds:\n500m Run\n15 Goblet Squats\n15 DB Rows each arm\n12 DB Push Press\nRest 90 sec`,
+    cooldown: `Stretch`,
+  },
+  {
+    id: 'HYB-017',
+    name: '1k Station Pairs',
+    category: 'hybrid',
+    description: 'Eight 1k runs with station pairs matching race order subset.',
+    difficulty: 'advanced',
+    duration: 70,
+    equipment: ['running', 'sled', 'rower', 'wall_ball'],
+    focusAreas: ['race specificity', '1k pacing'],
+    workoutType: 'race-order hybrid subset',
+    warmup: `10 min progressive cardio`,
+    mainSet: `1000m Run → Sled Push 50m\n1000m Run → 25 Wall Balls\n1000m Run → 500m Row\n1000m Run → 25 Burpees\n1000m Run → Farmer 100m\nRest 2 min only where noted — race pace intent`,
+    cooldown: `15 min easy walk`,
+  },
+  {
+    id: 'HYB-018',
+    name: 'Lunge Mile',
+    category: 'hybrid',
+    description: 'Accumulate 100 lunges across mile-equivalent running.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focusAreas: ['lunge volume', 'leg endurance'],
+    workoutType: 'lunge-run hybrid',
+    warmup: `5 min jog`,
+    mainSet: `4×400m Run + 25 Walking Lunges after each\nFinal: 400m Run + 25 Lunges\n100 lunges total — even pacing`,
+    cooldown: `Quad stretch`,
+  },
+  {
+    id: 'HYB-019',
+    name: 'Chipper Lite',
+    category: 'hybrid',
+    description: 'Single-pass chipper at controlled pace for intermediate athletes.',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running', 'rower', 'wall_ball'],
+    focusAreas: ['chipper pacing', 'full body'],
+    workoutType: 'chipper hybrid',
+    warmup: `5 min jog`,
+    mainSet: `For time (cap 50 min) @ steady pace:\n1600m Run\n500m Row\n40 Wall Balls\n40 Burpees\n800m Run\n20 min target for intermediates`,
+    cooldown: `Walk`,
+  },
+  {
+    id: 'HYB-020',
+    name: 'Double Station',
+    category: 'hybrid',
+    description: 'Two stations back-to-back before each run — race fatigue prep.',
+    difficulty: 'advanced',
+    duration: 55,
+    equipment: ['running', 'ski_erg', 'wall_ball', 'rower'],
+    focusAreas: ['station stacking', 'pacing'],
+    workoutType: 'stacked station hybrid',
+    warmup: `8 min easy mixed cardio`,
+    mainSet: `4 rounds:\n600m Run\n500m Ski + 20 Wall Balls (no rest between stations)\nRest 3 min\nRound 3–4: swap ski for 400m row if needed`,
+    cooldown: `10 min walk`,
+  },
+];
+
+================================================================================
+FILE: src/data/workout-library/engine.ts
+================================================================================
+import type { LibraryWorkout } from '@/types/workout';
+
+export const ENGINE_WORKOUTS: LibraryWorkout[] = [
+  {
+    id: 'ENG-001',
+    name: 'Mini HYROX',
+    category: 'engine',
+    description: 'Short race-format engine block.',
+    difficulty: 'advanced',
+    duration: 55,
+    equipment: ['running', 'ski_erg', 'rower'],
+    focusAreas: ['race pacing', 'station management'],
+    workoutType: 'race engine',
+    warmup: `10 min easy mixed cardio`,
+    mainSet: `3 rounds:\n1000m Run\n500m Ski Erg\n20 Burpees\n20 Lunges\nRest 3 min between rounds`,
+    cooldown: `Walk + full-body stretch`,
+  },
+  {
+    id: 'ENG-002',
+    name: 'Race Simulation',
+    category: 'engine',
+    description: 'Full HYROX-style simulation with run + station pairs.',
+    difficulty: 'advanced',
+    duration: 75,
+    equipment: ['running', 'sled', 'rower'],
+    focusAreas: ['race simulation', 'pacing', 'mental toughness'],
+    workoutType: 'race pacing',
+    warmup: `10 min progressive jog + station prep`,
+    mainSet: `1000m Run → Sled Push\n1000m Run → Sled Pull\n1000m Run → Burpees\n1000m Run → Row\nPace each run at moderate-high effort; stations at race intent`,
+    cooldown: `15 min very easy jog or walk`,
+  },
+  {
+    id: 'ENG-003',
+    name: 'Engine Builder 20',
+    category: 'engine',
+    description: 'Twenty-minute high-output block for intermediate engine development.',
+    difficulty: 'intermediate',
+    duration: 35,
+    equipment: ['running', 'rower'],
+    focusAreas: ['work capacity', 'lactate tolerance'],
+    workoutType: 'short engine block',
+    warmup: `8 min easy jog + row`,
+    mainSet: `20 min AMRAP:\n200m Run\n250m Row\n15 Burpees\nScore rounds — repeat monthly`,
+    cooldown: `Walk 5 min`,
+  },
+  {
+    id: 'ENG-004',
+    name: 'Beginner Engine Intro',
+    category: 'engine',
+    description: 'Introductory engine work at RPE 6–7 — learn pacing before race-density sessions.',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['running', 'rower_optional'],
+    focusAreas: ['work capacity', 'confidence'],
+    workoutType: 'engine introduction',
+    warmup: `5 min walk`,
+    mainSet: `3 rounds:\n400m Run @ moderate\n250m Row or 2 min bike @ moderate\n10 Burpees\nRest 3 min`,
+    cooldown: `Walk 5 min`,
+  },
+  {
+    id: 'ENG-005',
+    name: 'Ski-Burpee Engine',
+    category: 'engine',
+    description: 'Ski and burpee pairing for upper-lower engine stress.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['ski_erg', 'running'],
+    focusAreas: ['ski power', 'burpee capacity'],
+    workoutType: 'ski-burpee engine',
+    warmup: `5 min easy ski + jog`,
+    mainSet: `4 rounds:\n750m Ski @ hard\n15 Burpees\n400m Run @ moderate\nRest 2 min\nSubstitute: 500m row for ski`,
+    cooldown: `Easy row 5 min`,
+  },
+  {
+    id: 'ENG-006',
+    name: 'Death by 1k',
+    category: 'engine',
+    description: 'Progressive 1k runs with increasing station penalty each round.',
+    difficulty: 'advanced',
+    duration: 60,
+    equipment: ['running', 'wall_ball'],
+    focusAreas: ['1k pacing', 'escalating fatigue'],
+    workoutType: 'progressive engine — 1k',
+    warmup: `10 min jog`,
+    mainSet: `5 rounds:\n1000m Run @ race pace\nRound 1: 20 WB | R2: 25 | R3: 30 | R4: 35 | R5: 40\nRest 2 min between rounds`,
+    cooldown: `12 min walk`,
+  },
+  {
+    id: 'ENG-007',
+    name: 'Row Engine 40',
+    category: 'engine',
+    description: 'Row-dominant engine for athletes prioritizing row station.',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['rower', 'running'],
+    focusAreas: ['rowing power', 'aerobic power'],
+    workoutType: 'row-focused engine',
+    warmup: `5 min easy row`,
+    mainSet: `5 rounds:\n500m Row @ 90% effort\n300m Run @ hard\nRest 90 sec`,
+    cooldown: `5 min easy row`,
+  },
+  {
+    id: 'ENG-008',
+    name: 'Full Send Simulation',
+    category: 'engine',
+    description: 'Extended race simulation with all eight station types.',
+    difficulty: 'advanced',
+    duration: 90,
+    equipment: ['running', 'ski_erg', 'sled', 'rower', 'wall_ball', 'dumbbells'],
+    focusAreas: ['full race', 'pacing', 'nutrition'],
+    workoutType: 'full race simulation',
+    warmup: `15 min progressive warmup + station touches`,
+    mainSet: `Race order (1k run before each station):\nSki 1000m → Sled Push → Sled Pull → Burpees 80 → Row 1000m → Farmers 200m → Lunges 100m → Wall Balls 100\nTarget: race pace; practice fuel at 45 min`,
+    cooldown: `15 min walk + recovery`,
+  },
+  {
+    id: 'ENG-009',
+    name: 'Tabata Engine',
+    category: 'engine',
+    description: 'Short maximal bursts for anaerobic engine top-end.',
+    difficulty: 'intermediate',
+    duration: 30,
+    equipment: ['rower', 'ski_erg_optional'],
+    focusAreas: ['anaerobic power', 'repeatability'],
+    workoutType: 'anaerobic engine — tabata',
+    warmup: `5 min easy cardio`,
+    mainSet: `4 Tabata blocks (20 on / 10 off × 8):\nBlock 1: Row\nBlock 2: Ski (or row)\nBlock 3: Burpees\nBlock 4: Air Squats\n3 min easy between blocks`,
+    cooldown: `Walk 5 min`,
+  },
+  {
+    id: 'ENG-010',
+    name: 'Compromised Run',
+    category: 'engine',
+    description: 'Hard stations immediately before race-pace 1k runs.',
+    difficulty: 'advanced',
+    duration: 50,
+    equipment: ['running', 'wall_ball', 'rower'],
+    focusAreas: ['compromised running', 'race legs'],
+    workoutType: 'compromised run engine',
+    warmup: `8 min jog`,
+    mainSet: `4 rounds:\n30 Wall Balls + 500m Row (no rest between)\nThen immediately: 1000m Run @ race pace\nRest 4 min\nGoal: hold run split within 10 sec each round`,
+    cooldown: `10 min easy jog`,
+  },
+];
+
+================================================================================
+FILE: src/data/workout-library/recovery.ts
+================================================================================
+import type { LibraryWorkout } from '@/types/workout';
+
+export const RECOVERY_WORKOUTS: LibraryWorkout[] = [
+  {
+    id: 'RCV-001',
+    name: 'Mobility Flow',
+    category: 'recovery',
+    description: 'Full-body mobility to restore range of motion after hard hybrid weeks.',
+    difficulty: 'beginner',
+    duration: 30,
+    equipment: ['bodyweight'],
+    focusAreas: ['mobility', 'hips', 'T-spine', 'ankles'],
+    workoutType: 'mobility flow',
+    warmup: `2 min easy walk`,
+    mainSet: `Hip flexor stretch — 60 sec each side\nWorld's greatest stretch — 5 each side\nCat-cow — 10 reps\n90/90 switches — 8 each\nAnkle rocks — 10 each\nShoulder CARs — 5 each direction`,
+    cooldown: `2 min nasal breathing — box breath 4-4-4-4`,
+  },
+  {
+    id: 'RCV-002',
+    name: 'Recovery Run',
+    category: 'recovery',
+    description: 'Very easy jog to promote blood flow without adding training stress.',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['running'],
+    focusAreas: ['active recovery', 'easy pacing', 'legs'],
+    workoutType: 'recovery run',
+    warmup: `5 min walk`,
+    mainSet: `20–25 min jog @ truly easy (Zone 1)\nWalk 1 min every 8 min if legs feel heavy\nNo strides, no surges`,
+    cooldown: `5 min walk + calf stretch`,
+  },
+  {
+    id: 'RCV-003',
+    name: 'Easy Bike Flush',
+    category: 'recovery',
+    description: 'Low-impact spin when legs need relief from running volume.',
+    difficulty: 'beginner',
+    duration: 30,
+    equipment: ['bike'],
+    focusAreas: ['active recovery', 'joint-friendly', 'blood flow'],
+    workoutType: 'easy bike recovery',
+    warmup: `3 min easy spin`,
+    mainSet: `22 min Zone 1 spin\nRPM 75–85, light resistance\nStay conversational throughout`,
+    cooldown: `5 min easy spin + hip stretch`,
+  },
+  {
+    id: 'RCV-004',
+    name: 'Row Flush',
+    category: 'recovery',
+    description: 'Easy rowing to open the upper back and hips without race intensity.',
+    difficulty: 'intermediate',
+    duration: 30,
+    equipment: ['rower'],
+    focusAreas: ['rowing recovery', 'posture', 'breathing'],
+    workoutType: 'row flush',
+    warmup: `3 min very easy row`,
+    mainSet: `20 min row @ 18–20 spm, easy pressure\nFocus: long strokes, relaxed grip\nSubstitute: 25 min easy walk if no rower`,
+    cooldown: `5 min easy row`,
+  },
+  {
+    id: 'RCV-005',
+    name: 'Ski Flush',
+    category: 'recovery',
+    description: 'Light ski erg to keep shoulders moving without training load.',
+    difficulty: 'intermediate',
+    duration: 30,
+    equipment: ['ski_erg'],
+    focusAreas: ['shoulder recovery', 'technique', 'easy aerobic'],
+    workoutType: 'ski flush',
+    warmup: `3 min easy ski`,
+    mainSet: `20 min easy ski — smooth rhythm\nBreak into 4×5 min if shoulders fatigue\nSubstitute: easy row same duration`,
+    cooldown: `5 min walk + shoulder stretch`,
+  },
+  {
+    id: 'RCV-006',
+    name: 'Mobility + Walk',
+    category: 'recovery',
+    description: 'Walk plus mobility — ideal after missed sessions or heavy race sims.',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['bodyweight'],
+    focusAreas: ['mobility', 'nervous system', 'restoration'],
+    workoutType: 'mobility + walk',
+    warmup: `None`,
+    mainSet: `15 min brisk walk\n10 min mobility (hips, hamstrings, thoracic)\n5 min easy walk cool-down\nOptional: 4 min box breathing`,
+    cooldown: `Hydrate and log how legs feel`,
+  },
+];
+
+================================================================================
+FILE: src/data/workout-library/generator-templates.ts
+================================================================================
+import type { WorkoutTemplateDraft } from '@/types/workout';
+
+/** Raw generator templates — tags and coaching attached in build-library.ts. */
+export type GeneratorTemplateDraft = WorkoutTemplateDraft;
+
+/** Templates migrated from plan-generator.ts and performance-training/ (Phase 2). */
+export const GENERATOR_TEMPLATES: GeneratorTemplateDraft[] = [
+  // —— Running (plan-generator buildRunWorkout) ——
+  {
+    id: 'GEN-RUN-BEG-EASY',
+    name: 'Run-walk aerobic builder',
+    category: 'running',
+    description: 'Low-impact run-walk — build tolerance for the eight 1 km legs without redlining.',
+    difficulty: 'beginner',
+    duration: 45,
+    equipment: ['running'],
+    focus: ['Aerobic base', 'Pacing'],
+    variant: 'easy',
+    workoutType: 'run',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '5 min brisk walk + leg swings' },
+      { name: 'Main set', detail: '8 × 2 min jog / 1 min walk' },
+      { name: 'Strides', detail: '4 × 15 sec relaxed jog' },
+      { name: 'Cool-down', detail: '5 min walk' },
+    ],
+  },
+  {
+    id: 'GEN-RUN-BEG-TEMPO',
+    name: 'Intro tempo — controlled effort',
+    category: 'running',
+    description: 'Intro tempo at RPE 6–7 — learn what "comfortably hard" feels like before race pace.',
+    difficulty: 'beginner',
+    duration: 45,
+    equipment: ['running'],
+    focus: ['Threshold', 'Pacing'],
+    variant: 'tempo',
+    workoutType: 'run',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min easy' },
+      { name: 'Tempo', detail: '3 × 5 min @ moderate, 2 min walk' },
+      { name: 'Cool-down', detail: '5 min walk' },
+    ],
+  },
+  {
+    id: 'GEN-RUN-LONG-ADV',
+    name: 'Long run — race-pace durability',
+    category: 'running',
+    description: 'Build run durability without crushing legs',
+    difficulty: 'advanced',
+    duration: 60,
+    equipment: ['running'],
+    focus: ['Aerobic base', 'Pacing', 'Endurance'],
+    variant: 'long',
+    workoutType: 'run',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min easy jog + drills' },
+      { name: 'Main set', detail: '45–55 min steady — last 10 min @ marathon effort feel' },
+      { name: 'Strides', detail: '4 × 20 sec relaxed, 60 sec walk' },
+      { name: 'Cool-down', detail: '5 min walk' },
+    ],
+  },
+  {
+    id: 'GEN-RUN-LONG-MID',
+    name: 'Aerobic endurance run',
+    category: 'running',
+    description: 'Extended aerobic run for hybrid durability',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['running'],
+    focus: ['Aerobic base', 'Endurance'],
+    variant: 'long',
+    workoutType: 'run',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min easy jog + drills' },
+      { name: 'Main set', detail: '40–50 min steady Z2 pace' },
+      { name: 'Strides', detail: '4 × 20 sec relaxed, 60 sec walk' },
+      { name: 'Cool-down', detail: '5 min walk' },
+    ],
+  },
+  {
+    id: 'GEN-RUN-EASY',
+    name: 'Easy aerobic run',
+    category: 'running',
+    description: 'Keep this controlled. Hybrid training wins when easy days stay easy.',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focus: ['Aerobic base', 'Pacing'],
+    variant: 'easy',
+    workoutType: 'run',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min easy' },
+      { name: 'Main set', detail: '25–35 min conversational pace' },
+      { name: 'Cool-down', detail: '5 min walk' },
+    ],
+  },
+  {
+    id: 'GEN-RUN-TEMPO',
+    name: 'Tempo run — station-ready legs',
+    category: 'running',
+    description: 'Threshold development for race-pace running between stations',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running'],
+    focus: ['Threshold', 'Pacing'],
+    variant: 'tempo',
+    workoutType: 'run',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min easy' },
+      { name: 'Tempo', detail: '3 × 8 min @ comfortably hard, 2 min jog' },
+      { name: 'Cool-down', detail: '8 min easy' },
+    ],
+  },
+  // —— Running speed (buildSpeedWorkout) ——
+  {
+    id: 'GEN-RUN-SPD-BEG',
+    name: 'Strides & easy run',
+    category: 'running',
+    description: 'Speed that supports your 1k runs — not track-only fitness',
+    difficulty: 'beginner',
+    duration: 35,
+    equipment: ['running'],
+    focus: ['Leg speed', 'Coordination'],
+    variant: 'speed',
+    workoutType: 'speed',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min easy jog' },
+      { name: 'Strides', detail: '6 × 20 sec @ 90%, walk 60 sec' },
+      { name: 'Main', detail: '15 min easy jog' },
+      { name: 'Cool-down', detail: '5 min walk' },
+    ],
+  },
+  {
+    id: 'GEN-RUN-SPD-TAPER',
+    name: 'Short sharpeners',
+    category: 'running',
+    description: 'Neuromuscular touch before race or recovery week',
+    difficulty: 'intermediate',
+    duration: 40,
+    equipment: ['running'],
+    focus: ['Leg speed', '1k pace'],
+    variant: 'speed',
+    workoutType: 'speed',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min easy + 4 × 80m strides' },
+      { name: 'Main', detail: '5 × 300m @ 5K effort, full jog recovery' },
+      { name: 'Cool-down', detail: '8 min easy jog' },
+    ],
+  },
+  {
+    id: 'GEN-RUN-SPD-1K',
+    name: '1k intervals — race pace',
+    category: 'running',
+    description: 'Race-specific 1 km repeats',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running'],
+    focus: ['1k pace', 'Speed endurance'],
+    variant: 'speed',
+    workoutType: 'speed',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min easy + 2 × 200m strides' },
+      { name: 'Main', detail: '4 × 1000m @ HYROX run pace, 2 min jog recovery' },
+      { name: 'Cool-down', detail: '8 min easy jog' },
+    ],
+  },
+  {
+    id: 'GEN-RUN-SPD-400',
+    name: '400m repeats — speed endurance',
+    category: 'running',
+    description: 'Short reps for leg turnover',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focus: ['Speed endurance', 'Lactate tolerance'],
+    variant: 'speed',
+    workoutType: 'speed',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min easy + 2 × 200m strides' },
+      { name: 'Main', detail: '6 × 400m @ 5K effort, 90 sec jog' },
+      { name: 'Cool-down', detail: '8 min easy jog' },
+    ],
+  },
+  // —— Strength lower (buildStrengthWorkout — default hybrid lower) ——
+  {
+    id: 'GEN-STR-LOWER-PEAK-HEAVY',
+    name: 'Heavy lower body — hybrid transfer',
+    category: 'strength_lower',
+    description: 'Force output for sleds, carries & station leg drive',
+    difficulty: 'advanced',
+    duration: 60,
+    equipment: ['full_gym', 'sled'],
+    focus: ['Leg strength', 'Carry capacity'],
+    variant: 'heavy',
+    workoutType: 'strength',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min mobility + activation' },
+      { name: 'Primary strength', detail: '5 × 5 back squat @ RPE 8 + 4 × 4 trap-bar deadlift' },
+      { name: 'HYROX carry prep', detail: '5 × 40m sled push @ race pace feel' },
+      { name: 'Accessory', detail: '4 × 16 walking lunges + 3 × 12 step-ups' },
+      { name: 'Core', detail: '3 rounds: 30 sec dead bug + 30 sec plank' },
+    ],
+  },
+  {
+    id: 'GEN-STR-LOWER-PEAK',
+    name: 'Lower body power',
+    category: 'strength_lower',
+    description: 'Strength that transfers to sleds and stations',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['full_gym'],
+    focus: ['Leg strength', 'Carry capacity'],
+    variant: 'standard',
+    workoutType: 'strength',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min mobility + activation' },
+      { name: 'Primary strength', detail: '5 × 5 back squat @ RPE 7' },
+      { name: 'HYROX carry prep', detail: '4 × 40m sled push @ moderate' },
+      { name: 'Accessory', detail: '3 × 12 walking lunges + 3 × 15 hip thrust' },
+      { name: 'Core', detail: '3 rounds: 30 sec dead bug + 30 sec plank' },
+    ],
+  },
+  {
+    id: 'GEN-STR-LOWER-STANDARD',
+    name: 'Lower body power',
+    category: 'strength_lower',
+    description: 'Strength that transfers to sleds and stations',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['full_gym', 'dumbbells'],
+    focus: ['Leg strength', 'Carry capacity'],
+    variant: 'standard',
+    workoutType: 'strength',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min mobility + activation' },
+      { name: 'Primary strength', detail: '5 × 5 front squat + 4 × 6 RDL @ challenging' },
+      { name: 'HYROX carry prep', detail: '4 × 40m farmer carry heavy' },
+      { name: 'Accessory', detail: '3 × 12 walking lunges + 3 × 15 hip thrust' },
+      { name: 'Core', detail: '3 rounds: 30 sec dead bug + 30 sec plank' },
+    ],
+  },
+  {
+    id: 'GEN-STR-LOWER-BASE',
+    name: 'Lower body power',
+    category: 'strength_lower',
+    description: 'Foundation leg strength for sleds and lunges — technique and bracing before load.',
+    difficulty: 'beginner',
+    duration: 45,
+    equipment: ['dumbbells'],
+    focus: ['Leg strength', 'Carry capacity'],
+    variant: 'standard',
+    workoutType: 'strength',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min mobility + activation' },
+      { name: 'Primary strength', detail: '4 × 8 goblet squat + 4 × 10 RDL' },
+      { name: 'HYROX carry prep', detail: '4 × 40m farmer carry heavy' },
+      { name: 'Accessory', detail: '3 × 12 walking lunges + 3 × 15 hip thrust' },
+      { name: 'Core', detail: '3 rounds: 30 sec dead bug + 30 sec plank' },
+    ],
+  },
+  {
+    id: 'GEN-STR-LOWER-TAPER',
+    name: 'Strength maintenance',
+    category: 'strength_lower',
+    description: 'Maintain strength without accumulating fatigue',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['full_gym', 'dumbbells'],
+    focus: ['Leg strength', 'Maintenance'],
+    variant: 'maintenance',
+    workoutType: 'strength',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min mobility' },
+      { name: 'Primary strength', detail: '3 × 5 back squat @ RPE 6' },
+      { name: 'Accessory', detail: '2 × 10 RDL light · 2 × 10 lunges' },
+      { name: 'Core', detail: '2 rounds: dead bug + plank' },
+    ],
+  },
+  // —— Strength upper (split days) ——
+  {
+    id: 'GEN-STR-UPPER-STANDARD',
+    name: 'Upper Strength',
+    category: 'strength_upper',
+    description: 'Balanced horizontal push and pull — 1:1 pressing and rowing for SkiErg and station durability',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['full_gym'],
+    focus: ['Upper body strength', 'Shoulder stability'],
+    variant: 'standard',
+    workoutType: 'strength',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min mobility + ramp sets' },
+      { name: 'Bench Press', detail: '4 × 6 @ RPE 7–8' },
+      { name: 'Pull-Ups', detail: '4 × 8' },
+      { name: 'Shoulder Press', detail: '3 × 8' },
+      { name: 'Accessories', detail: 'Incline DB 3 × 10 · Lateral raise 3 × 12' },
+      { name: 'Cool-down', detail: '5 min stretch' },
+    ],
+  },
+  // —— Conditioning ——
+  {
+    id: 'GEN-COND-STANDARD',
+    name: 'Engine builder',
+    category: 'conditioning',
+    description: 'Mixed-modal conditioning without race-day fatigue',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['rower', 'running'],
+    focus: ['Work capacity', 'Transitions'],
+    variant: 'standard',
+    workoutType: 'conditioning',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '6 min row easy + dynamic prep' },
+      { name: 'Circuit', detail: '5 rounds: 12 cal row, 10 burpees, 200m run' },
+      { name: 'Finisher', detail: '8 min AMRAP: 8 KB swings + 8 box step-ups' },
+      { name: 'Cool-down', detail: '5 min walk + breathing' },
+    ],
+  },
+  {
+    id: 'GEN-COND-BURPEE',
+    name: 'Engine builder — burpee density',
+    category: 'conditioning',
+    description: 'Burpee-focused engine work',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['rower', 'running'],
+    focus: ['Work capacity', 'Burpees'],
+    variant: 'burpee',
+    workoutType: 'conditioning',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '6 min row easy + dynamic prep' },
+      { name: 'Circuit', detail: '5 rounds: 10 burpee broad jumps, 12 cal row, 200m run' },
+      { name: 'Finisher', detail: '8 min AMRAP: 8 KB swings + 8 box step-ups' },
+      { name: 'Cool-down', detail: '5 min walk + breathing' },
+    ],
+  },
+  // —— HYROX / skills ——
+  {
+    id: 'GEN-HYROX-SIM-HEAVY',
+    name: 'Heavy hybrid simulation',
+    category: 'hyrox',
+    description: 'Race-pace rehearsal — expect compromised running',
+    difficulty: 'advanced',
+    duration: 75,
+    equipment: ['running', 'sled', 'rower', 'wall_ball'],
+    focus: ['Race simulation', 'Pacing'],
+    variant: 'simulation',
+    workoutType: 'race_sim',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min jog + activation' },
+      { name: 'Block 1', detail: '1km run → 75m sled push @ race load → 1km run' },
+      { name: 'Block 2', detail: '100m burpee broad jump → 1km run → 200m farmers' },
+      { name: 'Block 3', detail: '1km run → 500m row @ strong pace → 1km run' },
+      { name: 'Finisher', detail: 'Wall balls + ski erg — 12 min cap' },
+    ],
+  },
+  {
+    id: 'GEN-HYROX-SIM',
+    name: 'HYROX station simulation',
+    category: 'hyrox',
+    description: 'Race-pace rehearsal with controlled fatigue',
+    difficulty: 'intermediate',
+    duration: 75,
+    equipment: ['running', 'sled', 'rower'],
+    focus: ['Race simulation', 'Station pacing'],
+    variant: 'simulation',
+    workoutType: 'race_sim',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min jog + activation' },
+      { name: 'Block 1', detail: '1km run → 50m sled push → 1km run' },
+      { name: 'Block 2', detail: '80m burpee broad jump → 1km run → 200m farmers' },
+      { name: 'Block 3', detail: '1km run → 100m sandbag lunges → 1km run' },
+      { name: 'Finisher', detail: '100 wall balls for time (partition)' },
+    ],
+  },
+  {
+    id: 'GEN-HYROX-SLED-SKILL',
+    name: 'Sled focus — station skills',
+    category: 'hyrox',
+    description: 'Station efficiency under fatigue',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['running', 'sled'],
+    focus: ['Sled push', 'Station pacing'],
+    variant: 'sled',
+    workoutType: 'hyrox',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min easy + drills' },
+      { name: 'Skill A', detail: '5 × 50m sled push — rest 90 sec' },
+      { name: 'Skill B', detail: '4 × 250m row @ controlled hard' },
+      { name: 'Combo', detail: '3 rounds: 400m run, 20 wall balls, 20 lunges' },
+      { name: 'Cool-down', detail: '6 min walk' },
+    ],
+  },
+  {
+    id: 'GEN-HYROX-SKILL',
+    name: 'Station skills & pacing',
+    category: 'hyrox',
+    description: 'Station efficiency under fatigue',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['running', 'sled', 'rower'],
+    focus: ['Station pacing', 'Transitions'],
+    variant: 'stations',
+    workoutType: 'hyrox',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min easy + drills' },
+      { name: 'Skill A', detail: '4 × 50m sled push — rest 90 sec' },
+      { name: 'Skill B', detail: '4 × 250m row @ controlled hard' },
+      { name: 'Combo', detail: '3 rounds: 400m run, 20 wall balls, 20 lunges' },
+      { name: 'Cool-down', detail: '6 min walk' },
+    ],
+  },
+  {
+    id: 'GEN-HYROX-SKL-SLED',
+    name: 'Sled skills',
+    category: 'hyrox',
+    description: 'Sled push and pull skill work',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running', 'sled'],
+    focus: ['Sled push', 'Sled pull'],
+    variant: 'sled',
+    workoutType: 'skills',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '6 min jog + hip openers' },
+      { name: 'Sled push', detail: '6 × 15m @ race load — rest 90 sec' },
+      { name: 'Sled pull', detail: '6 × 12.5m — rest 90 sec' },
+      { name: 'Combo', detail: '3 rounds: 400m run, 20 lunges' },
+    ],
+  },
+  {
+    id: 'GEN-HYROX-SKL-ROW',
+    name: 'Row & ski skills',
+    category: 'hyrox',
+    description: 'Row and ski erg efficiency',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['rower', 'ski_erg'],
+    focus: ['Rowing', 'Ski erg'],
+    variant: 'row',
+    workoutType: 'skills',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '5 min easy row + ski' },
+      { name: 'Row', detail: '4 × 500m — technique then pace' },
+      { name: 'Ski', detail: '4 × 400m @ steady — rest 90 sec' },
+      { name: 'Cool-down', detail: '5 min easy row' },
+    ],
+  },
+  {
+    id: 'GEN-HYROX-SKL-GENERAL',
+    name: 'HYROX station skills',
+    category: 'hyrox',
+    description: 'Station efficiency — quality reps under manageable fatigue',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running', 'wall_ball'],
+    focus: ['Station skill', 'Transitions'],
+    variant: 'stations',
+    workoutType: 'skills',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min easy jog' },
+      { name: 'Stations', detail: '4 rounds: 20 wall balls, 30 lunges, 400m run' },
+      { name: 'Cool-down', detail: '6 min walk' },
+    ],
+  },
+  {
+    id: 'GEN-HYROX-SKL-BURPEE',
+    name: 'Burpee station skills',
+    category: 'hyrox',
+    description: 'Burpee station prep with running transitions',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focus: ['Burpees', 'Transitions'],
+    variant: 'burpee',
+    workoutType: 'skills',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min easy jog' },
+      { name: 'Stations', detail: '4 rounds: 15 burpees, 20 wall balls, 400m run' },
+      { name: 'Cool-down', detail: '6 min walk' },
+    ],
+  },
+  // —— Performance Training (session-builder) ——
+  {
+    id: 'PERF-STR-UPPER',
+    name: 'Upper Strength',
+    category: 'strength_upper',
+    description: 'Horizontal push & pull — sustainable pressing volume',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['full_gym', 'dumbbells'],
+    focus: ['Upper body strength', 'Progressive overload'],
+    variant: 'performance',
+    workoutType: 'strength',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min mobility + ramp sets' },
+      { name: 'Bench Press', detail: '{{SETS}} × 6 @ {{LOAD_CUE}}' },
+      { name: 'Pull-Ups', detail: '{{SETS}} × 8 (band assist if needed)' },
+      { name: 'Shoulder Press', detail: 'Standing press — 3 × 8 @ {{LOAD_CUE}}' },
+      { name: 'Accessories', detail: 'Incline DB 3 × 10 · Lateral raise 3 × 12 · Curl 3 × 12' },
+      { name: 'Cool-down', detail: '5 min stretch — chest and lats' },
+    ],
+  },
+  {
+    id: 'PERF-STR-LOWER',
+    name: 'Lower Strength',
+    category: 'strength_lower',
+    description: 'Squat pattern & posterior chain — complements easy run days',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['full_gym', 'dumbbells'],
+    focus: ['Leg strength', 'Hinge pattern'],
+    variant: 'performance',
+    workoutType: 'strength',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min bike + hip mobility' },
+      { name: 'Squat', detail: '{{SQUAT_PATTERN}}' },
+      { name: 'RDL', detail: 'Romanian Deadlift — 3 × 8 @ {{LOAD_CUE}}' },
+      { name: 'Lunges', detail: 'Walking lunges — 3 × 12 each leg' },
+      { name: 'Step-ups', detail: '3 × 10 each leg (moderate load)' },
+      { name: 'Core', detail: '3 rounds: 30 sec plank + 10 dead bugs each side' },
+    ],
+  },
+  {
+    id: 'PERF-STR-FULL',
+    name: 'Full Body Strength',
+    category: 'full_body_strength',
+    description: 'Balanced strength for three-day performance blocks',
+    difficulty: 'intermediate',
+    duration: 60,
+    equipment: ['full_gym', 'dumbbells'],
+    focus: ['Full body', 'Strength base'],
+    variant: 'performance',
+    workoutType: 'strength',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min movement prep' },
+      { name: 'Primary', detail: '{{PRIMARY_LIFT}}' },
+      { name: 'Pull', detail: 'Rows 3 × 10 · Pull-ups 3 × AMRAP-2' },
+      { name: 'Accessory', detail: 'RDL 3 × 8 · Core 3 rounds' },
+      { name: 'Cool-down', detail: 'Full-body stretch' },
+    ],
+  },
+  {
+    id: 'PERF-RUN-EASY',
+    name: 'Easy Run',
+    category: 'running',
+    description: 'Zone 2 — conversational pace between harder sessions',
+    difficulty: 'intermediate',
+    duration: 45,
+    equipment: ['running'],
+    focus: ['Aerobic base', 'Recovery between lifts'],
+    variant: 'easy',
+    workoutType: 'run',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '8 min walk → easy jog' },
+      { name: 'Main set', detail: '{{EASY_RUN_MINUTES}} min Zone 2 — nose breathing if possible' },
+      { name: 'Cool-down', detail: '5 min walk + calf stretch' },
+    ],
+  },
+  {
+    id: 'PERF-RUN-LONG',
+    name: 'Long Aerobic',
+    category: 'running',
+    description: 'Sustainable effort — run, row, bike, ski, or mixed modal',
+    difficulty: 'intermediate',
+    duration: 75,
+    equipment: ['running', 'rower', 'bike'],
+    focus: ['Aerobic endurance', 'Durability'],
+    variant: 'long',
+    workoutType: 'run',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min easy on chosen modality' },
+      {
+        name: 'Main set',
+        detail:
+          '{{LONG_AEROBIC_MINUTES}} min continuous @ Zone 2 (mix modalities every 15–20 min if desired)',
+      },
+      { name: 'Fuel', detail: 'Practice hydration on efforts over 75 min' },
+      { name: 'Cool-down', detail: '8 min very easy + stretch' },
+    ],
+  },
+  {
+    id: 'PERF-RUN-SPEED',
+    name: 'Speed Session',
+    category: 'running',
+    description: 'Structured intervals — fitness-focused speed',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['running'],
+    focus: ['Speed endurance', 'Pacing'],
+    variant: 'speed',
+    workoutType: 'speed',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '10 min easy jog + 4 × 80m strides' },
+      { name: 'Main set', detail: '{{INTERVAL_MAIN}}' },
+      { name: 'Cool-down', detail: '10 min easy jog' },
+    ],
+  },
+  {
+    id: 'PERF-COND',
+    name: 'Conditioning',
+    category: 'conditioning',
+    description: 'Work capacity without race-day wreckage',
+    difficulty: 'intermediate',
+    duration: 50,
+    equipment: ['rower', 'running'],
+    focus: ['Work capacity', 'Mixed modal'],
+    variant: 'performance',
+    workoutType: 'conditioning',
+    workoutBlocks: [
+      { name: 'Warm-up', detail: '5 min easy cardio + dynamic prep' },
+      {
+        name: 'Circuit',
+        detail:
+          '{{CONDITIONING_ROUNDS}} rounds: {{ROW_PIECE}} · 20 walking lunges · 15 burpees · 60 sec rest',
+      },
+      { name: 'Cool-down', detail: '5 min walk + breathing' },
+    ],
+  },
+];
+
+================================================================================
+FILE: src/data/workout-library/tags/index.ts
+================================================================================
+export { attachTagsToLegacy, attachTagsToTemplates } from './apply-tags';
+export { WORKOUT_TAG_REGISTRY } from './registry';
+
+================================================================================
+FILE: src/data/workout-library/tags/registry.ts
+================================================================================
+import { AEROBIC_TAGS } from './aerobic-tags';
+import { ENGINE_TAGS } from './engine-tags';
+import { GENERATOR_TAGS } from './generator-tags';
+import { HYBRID_TAGS } from './hybrid-tags';
+import { RECOVERY_TAGS } from './recovery-tags';
+import { SKILLS_TAGS } from './skills-tags';
+import { SPEED_TAGS } from './speed-tags';
+import { STRENGTH_TAGS } from './strength-tags';
+
+/** Master tag lookup — keyed by workout template id. */
+export const WORKOUT_TAG_REGISTRY: Record<string, string[]> = {
+  ...AEROBIC_TAGS,
+  ...SPEED_TAGS,
+  ...STRENGTH_TAGS,
+  ...SKILLS_TAGS,
+  ...HYBRID_TAGS,
+  ...ENGINE_TAGS,
+  ...RECOVERY_TAGS,
+  ...GENERATOR_TAGS,
+};
+
+================================================================================
+FILE: src/data/workout-library/tags/apply-tags.ts
+================================================================================
+import type { LegacyLibraryWorkout, WorkoutTemplateDraft } from '@/types/workout';
+
+import { WORKOUT_TAG_REGISTRY } from './registry';
+
+export function attachTagsToLegacy(workouts: LegacyLibraryWorkout[]): LegacyLibraryWorkout[] {
+  return workouts.map((w) => ({
+    ...w,
+    tags: WORKOUT_TAG_REGISTRY[w.id] ?? [],
+  }));
+}
+
+type TemplateInput = WorkoutTemplateDraft;
+
+export function attachTagsToTemplates(templates: TemplateInput[]): WorkoutTemplateDraft[] {
+  return templates.map((t) => ({
+    ...t,
+    tags: WORKOUT_TAG_REGISTRY[t.id] ?? t.tags ?? [],
+  }));
+}
+
+================================================================================
+FILE: src/data/workout-library/tags/generator-tags.ts
+================================================================================
+/** Tags for GEN-* and PERF-* generator templates */
+export const GENERATOR_TAGS: Record<string, string[]> = {
+  'GEN-RUN-BEG-EASY': ['running', 'zone2', 'aerobic', 'walk_run', 'base_phase', 'beginner'],
+  'GEN-RUN-BEG-TEMPO': ['running', 'threshold', 'tempo', 'base_phase', 'beginner'],
+  'GEN-RUN-LONG-ADV': ['running', 'long_run', 'aerobic', 'endurance', 'build_phase', 'peak_phase', 'advanced'],
+  'GEN-RUN-LONG-MID': ['running', 'long_run', 'zone2', 'aerobic', 'build_phase', 'intermediate'],
+  'GEN-RUN-EASY': ['running', 'zone2', 'aerobic', 'base_phase', 'taper_phase', 'intermediate'],
+  'GEN-RUN-TEMPO': ['running', 'threshold', 'tempo', 'build_phase', 'peak_phase', 'intermediate'],
+  'GEN-RUN-SPD-BEG': ['running', 'strides', 'speed', 'base_phase', 'beginner'],
+  'GEN-RUN-SPD-TAPER': ['running', 'speed', 'intervals', 'taper_phase', 'intermediate'],
+  'GEN-RUN-SPD-1K': ['running', 'race_pace', 'speed', 'hyrox_run', 'peak_phase', 'intermediate'],
+  'GEN-RUN-SPD-400': ['running', 'speed', 'intervals', 'build_phase', 'intermediate'],
+  'GEN-STR-LOWER-PEAK-HEAVY': ['strength', 'legs', 'sled_push', 'hyrox_station', 'peak_phase', 'advanced'],
+  'GEN-STR-LOWER-PEAK': ['strength', 'legs', 'hyrox_station', 'peak_phase', 'intermediate'],
+  'GEN-STR-LOWER-STANDARD': ['strength', 'legs', 'build_phase', 'intermediate'],
+  'GEN-STR-LOWER-BASE': ['strength', 'legs', 'foundation', 'base_phase', 'beginner'],
+  'GEN-STR-LOWER-TAPER': ['strength', 'legs', 'maintenance', 'taper_phase', 'intermediate'],
+  'GEN-STR-UPPER-STANDARD': ['strength', 'upper_body', 'pressing', 'pulling', 'build_phase', 'intermediate'],
+  'GEN-COND-STANDARD': ['conditioning', 'engine', 'work_capacity', 'build_phase', 'intermediate'],
+  'GEN-COND-BURPEE': ['conditioning', 'burpees', 'engine', 'build_phase', 'intermediate'],
+  'GEN-HYROX-SIM-HEAVY': ['hyrox_simulation', 'race_specific', 'sled_push', 'peak_phase', 'advanced'],
+  'GEN-HYROX-SIM': ['hyrox_simulation', 'race_specific', 'peak_phase', 'intermediate'],
+  'GEN-HYROX-SLED-SKILL': ['hyrox_station', 'sled_push', 'skills', 'build_phase', 'intermediate'],
+  'GEN-HYROX-SKILL': ['hyrox_station', 'skills', 'stations', 'build_phase', 'intermediate'],
+  'GEN-HYROX-SKL-SLED': ['sled_push', 'sled_pull', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'GEN-HYROX-SKL-ROW': ['rowing', 'ski_erg', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'GEN-HYROX-SKL-GENERAL': ['wall_ball', 'lunges', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'GEN-HYROX-SKL-BURPEE': ['burpees', 'wall_ball', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'PERF-STR-UPPER': ['strength', 'upper_body', 'performance_training', 'build_phase', 'intermediate'],
+  'PERF-STR-LOWER': ['strength', 'legs', 'performance_training', 'build_phase', 'intermediate'],
+  'PERF-STR-FULL': ['strength', 'full_body', 'performance_training', 'build_phase', 'intermediate'],
+  'PERF-RUN-EASY': ['running', 'zone2', 'aerobic', 'performance_training', 'base_phase', 'intermediate'],
+  'PERF-RUN-LONG': ['running', 'long_run', 'aerobic', 'performance_training', 'build_phase', 'intermediate'],
+  'PERF-RUN-SPEED': ['running', 'speed', 'intervals', 'performance_training', 'build_phase', 'intermediate'],
+  'PERF-COND': ['conditioning', 'engine', 'performance_training', 'build_phase', 'intermediate'],
+};
+
+================================================================================
+FILE: src/data/workout-library/tags/aerobic-tags.ts
+================================================================================
+/** Tags for AER-* — merged onto library workouts at build time. */
+export const AEROBIC_TAGS: Record<string, string[]> = {
+  'AER-001': ['running', 'zone2', 'aerobic', 'base_phase', 'beginner'],
+  'AER-002': ['running', 'zone2', 'aerobic', 'endurance', 'long_run', 'build_phase', 'intermediate'],
+  'AER-003': ['running', 'rowing', 'zone2', 'aerobic', 'multi_modal', 'base_phase', 'intermediate'],
+  'AER-004': ['running', 'zone2', 'aerobic', 'base_phase', 'beginner'],
+  'AER-005': ['cycling', 'zone2', 'aerobic', 'base_phase', 'beginner', 'low_impact'],
+  'AER-006': ['rowing', 'zone2', 'aerobic', 'hyrox_station', 'base_phase', 'intermediate'],
+  'AER-007': ['ski_erg', 'zone2', 'aerobic', 'hyrox_station', 'base_phase', 'intermediate'],
+  'AER-008': ['running', 'zone2', 'aerobic', 'long_run', 'endurance', 'build_phase', 'peak_phase', 'advanced'],
+  'AER-009': ['running', 'rowing', 'zone2', 'aerobic', 'brick', 'hyrox_run', 'base_phase', 'intermediate'],
+  'AER-010': ['running', 'zone2', 'aerobic', 'walk_run', 'base_phase', 'beginner'],
+  'AER-011': ['running', 'rowing', 'ski_erg', 'zone2', 'aerobic', 'multi_modal', 'hyrox_station', 'build_phase', 'intermediate'],
+  'AER-012': ['running', 'zone2', 'aerobic', 'long_run', 'progressive', 'peak_phase', 'advanced'],
+  'AER-013': ['rowing', 'zone2', 'aerobic', 'base_phase', 'beginner'],
+  'AER-014': ['running', 'zone2', 'aerobic', 'hyrox_run', 'race_specific', 'build_phase', 'intermediate'],
+  'AER-015': ['running', 'zone2', 'recovery', 'taper_phase', 'beginner', 'active_recovery'],
+};
+
+================================================================================
+FILE: src/data/workout-library/tags/strength-tags.ts
+================================================================================
+/** Tags for STR-* */
+export const STRENGTH_TAGS: Record<string, string[]> = {
+  'STR-001': ['strength', 'legs', 'squat', 'posterior_chain', 'carry', 'build_phase', 'intermediate'],
+  'STR-002': ['strength', 'sled_push', 'legs', 'hyrox_station', 'build_phase', 'peak_phase', 'intermediate'],
+  'STR-003': ['strength', 'full_body', 'deadlift', 'pressing', 'carry', 'build_phase', 'intermediate'],
+  'STR-004': ['strength', 'legs', 'foundation', 'base_phase', 'beginner'],
+  'STR-005': ['strength', 'upper_body', 'pressing', 'pulling', 'ski_erg', 'build_phase', 'intermediate'],
+  'STR-006': ['strength', 'deadlift', 'posterior_chain', 'grip', 'build_phase', 'intermediate'],
+  'STR-007': ['strength', 'sled_pull', 'posterior_chain', 'hyrox_station', 'build_phase', 'intermediate'],
+  'STR-008': ['strength', 'overhead', 'wall_ball', 'core', 'hyrox_station', 'build_phase', 'intermediate'],
+  'STR-009': ['strength', 'legs', 'glutes', 'hamstrings', 'sled_push', 'build_phase', 'intermediate'],
+  'STR-010': ['strength', 'wall_ball', 'hyrox_station', 'endurance', 'build_phase', 'intermediate'],
+  'STR-011': ['strength', 'full_body', 'circuit', 'base_phase', 'beginner'],
+  'STR-012': ['strength', 'legs', 'squat', 'peak_phase', 'advanced'],
+  'STR-013': ['strength', 'deadlift', 'grip', 'carry', 'peak_phase', 'advanced'],
+  'STR-014': ['strength', 'legs', 'unilateral', 'lunges', 'hyrox_station', 'build_phase', 'intermediate'],
+  'STR-015': ['strength', 'wall_ball', 'sled_push', 'hyrox_station', 'race_specific', 'peak_phase', 'advanced'],
+};
+
+================================================================================
+FILE: src/data/workout-library/tags/speed-tags.ts
+================================================================================
+/** Tags for SPD-* */
+export const SPEED_TAGS: Record<string, string[]> = {
+  'SPD-001': ['running', 'speed', 'intervals', 'vo2max', 'peak_phase', 'advanced'],
+  'SPD-002': ['running', 'threshold', 'tempo', 'build_phase', 'intermediate'],
+  'SPD-003': ['running', 'strides', 'neuromuscular', 'base_phase', 'beginner'],
+  'SPD-004': ['running', 'speed', 'intervals', 'anaerobic', 'build_phase', 'intermediate'],
+  'SPD-005': ['running', 'race_pace', 'speed', 'hyrox_run', 'intervals', 'build_phase', 'peak_phase', 'intermediate'],
+  'SPD-006': ['running', 'threshold', 'intervals', 'build_phase', 'intermediate'],
+  'SPD-007': ['running', 'hills', 'strength_speed', 'build_phase', 'intermediate'],
+  'SPD-008': ['running', 'speed', 'intervals', 'endurance', 'peak_phase', 'advanced'],
+  'SPD-009': ['running', 'progressive', 'threshold', 'build_phase', 'intermediate'],
+  'SPD-010': ['running', 'race_pace', 'hyrox_run', 'speed', 'peak_phase', 'advanced'],
+};
+
+================================================================================
+FILE: src/data/workout-library/tags/skills-tags.ts
+================================================================================
+/** Tags for SKL-* */
+export const SKILLS_TAGS: Record<string, string[]> = {
+  'SKL-001': ['ski_erg', 'wall_ball', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'SKL-002': ['burpees', 'running', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'SKL-003': ['lunges', 'running', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'SKL-004': ['rowing', 'hyrox_station', 'skills', 'pacing', 'build_phase', 'intermediate'],
+  'SKL-005': ['sled_push', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'SKL-006': ['sled_pull', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'SKL-007': ['wall_ball', 'hyrox_station', 'endurance', 'skills', 'build_phase', 'intermediate'],
+  'SKL-008': ['burpees', 'skills', 'technique', 'base_phase', 'beginner'],
+  'SKL-009': ['farmer_carry', 'hyrox_station', 'grip', 'skills', 'build_phase', 'intermediate'],
+  'SKL-010': ['farmer_carry', 'carry', 'skills', 'base_phase', 'beginner'],
+  'SKL-011': ['ski_erg', 'hyrox_station', 'skills', 'peak_phase', 'advanced'],
+  'SKL-012': ['lunges', 'running', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+  'SKL-013': ['rowing', 'ski_erg', 'hyrox_station', 'transitions', 'skills', 'build_phase', 'intermediate'],
+  'SKL-014': ['burpees', 'running', 'hyrox_station', 'skills', 'peak_phase', 'advanced'],
+  'SKL-015': ['wall_ball', 'hyrox_station', 'skills', 'build_phase', 'intermediate'],
+};
+
+================================================================================
+FILE: src/data/workout-library/tags/hybrid-tags.ts
+================================================================================
+/** Tags for HYB-* */
+export const HYBRID_TAGS: Record<string, string[]> = {
+  'HYB-001': ['hybrid', 'conditioning', 'wall_ball', 'burpees', 'lunges', 'build_phase', 'intermediate'],
+  'HYB-002': ['hybrid', 'strength_endurance', 'running', 'build_phase', 'intermediate'],
+  'HYB-003': ['hybrid', 'burpees', 'lunges', 'running', 'base_phase', 'beginner'],
+  'HYB-004': ['hybrid', 'rowing', 'running', 'brick', 'build_phase', 'intermediate'],
+  'HYB-005': ['hybrid', 'ski_erg', 'wall_ball', 'hyrox_station', 'build_phase', 'intermediate'],
+  'HYB-006': ['hybrid', 'sled_push', 'hyrox_run', 'running', 'build_phase', 'intermediate'],
+  'HYB-007': ['hybrid', 'farmer_carry', 'running', 'build_phase', 'intermediate'],
+  'HYB-008': ['hyrox_simulation', 'race_specific', 'running', 'ski_erg', 'rowing', 'wall_ball', 'peak_phase', 'advanced'],
+  'HYB-009': ['hybrid', 'conditioning', 'emom', 'pacing', 'build_phase', 'intermediate'],
+  'HYB-010': ['hybrid', 'wall_ball', 'running', 'ladder', 'build_phase', 'intermediate'],
+  'HYB-011': ['hybrid', 'circuit', 'base_phase', 'beginner'],
+  'HYB-012': ['hybrid', 'sled_pull', 'rowing', 'running', 'build_phase', 'intermediate'],
+  'HYB-013': ['hybrid', 'wall_ball', 'hyrox_station', 'volume', 'peak_phase', 'advanced'],
+  'HYB-014': ['hybrid', 'multi_modal', 'running', 'rowing', 'ski_erg', 'build_phase', 'intermediate'],
+  'HYB-015': ['hybrid', 'burpees', 'hyrox_run', 'volume', 'peak_phase', 'advanced'],
+  'HYB-016': ['hybrid', 'dumbbells', 'running', 'base_phase', 'beginner'],
+  'HYB-017': ['hyrox_simulation', 'race_specific', 'hyrox_run', 'sled_push', 'peak_phase', 'advanced'],
+  'HYB-018': ['hybrid', 'lunges', 'running', 'hyrox_station', 'build_phase', 'intermediate'],
+  'HYB-019': ['hybrid', 'chipper', 'conditioning', 'build_phase', 'intermediate'],
+  'HYB-020': ['hybrid', 'ski_erg', 'wall_ball', 'station_stack', 'peak_phase', 'advanced'],
+};
+
+================================================================================
+FILE: src/data/workout-library/tags/engine-tags.ts
+================================================================================
+/** Tags for ENG-* */
+export const ENGINE_TAGS: Record<string, string[]> = {
+  'ENG-001': ['hyrox_simulation', 'race_specific', 'conditioning', 'running', 'peak_phase', 'advanced'],
+  'ENG-002': ['hyrox_simulation', 'race_specific', 'race_pace', 'sled_push', 'sled_pull', 'peak_phase', 'advanced'],
+  'ENG-003': ['conditioning', 'engine', 'work_capacity', 'build_phase', 'intermediate'],
+  'ENG-004': ['conditioning', 'engine', 'base_phase', 'beginner'],
+  'ENG-005': ['conditioning', 'ski_erg', 'burpees', 'engine', 'build_phase', 'intermediate'],
+  'ENG-006': ['conditioning', 'hyrox_run', 'wall_ball', 'engine', 'peak_phase', 'advanced'],
+  'ENG-007': ['conditioning', 'rowing', 'engine', 'hyrox_station', 'build_phase', 'intermediate'],
+  'ENG-008': ['hyrox_simulation', 'race_specific', 'full_race', 'peak_phase', 'taper_phase', 'advanced'],
+  'ENG-009': ['conditioning', 'anaerobic', 'tabata', 'build_phase', 'intermediate'],
+  'ENG-010': ['conditioning', 'compromised_running', 'hyrox_run', 'race_pace', 'peak_phase', 'advanced'],
+};
+
+================================================================================
+FILE: src/data/workout-library/tags/recovery-tags.ts
+================================================================================
+/** Tags for RCV-* */
+export const RECOVERY_TAGS: Record<string, string[]> = {
+  'RCV-001': ['recovery', 'mobility', 'taper_phase', 'beginner'],
+  'RCV-002': ['recovery', 'running', 'zone2', 'active_recovery', 'taper_phase', 'beginner'],
+  'RCV-003': ['recovery', 'cycling', 'active_recovery', 'taper_phase', 'beginner'],
+  'RCV-004': ['recovery', 'rowing', 'active_recovery', 'taper_phase', 'intermediate'],
+  'RCV-005': ['recovery', 'ski_erg', 'active_recovery', 'taper_phase', 'intermediate'],
+  'RCV-006': ['recovery', 'mobility', 'walking', 'taper_phase', 'beginner'],
+};
+
+================================================================================
+FILE: src/data/workout-library/coaching-metadata/index.ts
+================================================================================
+export { attachCoachingToTemplates } from './apply-coaching';
+export { COACHING_OVERRIDES } from './overrides';
+export { resolveCoaching } from './resolve';
+
+================================================================================
+FILE: src/data/workout-library/coaching-metadata/station-keys.ts
+================================================================================
+import type { HyroxStationKey } from '@/constants/hyrox-station-cues';
+
+const TAG_TO_STATION: Record<string, HyroxStationKey> = {
+  running: 'running',
+  hyrox_run: 'running',
+  compromised_running: 'running',
+  ski_erg: 'ski_erg',
+  rowing: 'row',
+  sled_push: 'sled_push',
+  sled_pull: 'sled_pull',
+  wall_ball: 'wall_ball',
+  burpees: 'burpee',
+  farmer_carry: 'farmer_carry',
+  carry: 'farmer_carry',
+  lunges: 'lunge',
+  walking: 'running',
+};
+
+/** Infer which HYROX station cue blocks apply from workout tags. */
+export function inferStationKeysFromTags(tags: string[]): HyroxStationKey[] {
+  const keys = new Set<HyroxStationKey>();
+  for (const tag of tags) {
+    const key = TAG_TO_STATION[tag];
+    if (key) keys.add(key);
+  }
+  return [...keys];
+}
+
+================================================================================
+FILE: src/data/workout-library/coaching-metadata/apply-coaching.ts
+================================================================================
+import type { WorkoutTemplate, WorkoutTemplateDraft } from '@/types/workout';
+
+import { resolveCoaching } from './resolve';
+
+type TemplateInput = WorkoutTemplateDraft &
+  Partial<
+    Pick<WorkoutTemplate, 'progressionNotes' | 'coachingCues' | 'substitutionGuidance' | 'rpeGuidance'>
+  >;
+
+function sessionTextFromTemplate(t: TemplateInput): string {
+  return t.workoutBlocks.map((b) => b.detail).join('\n');
+}
+
+export function attachCoachingToTemplates(templates: TemplateInput[]): WorkoutTemplate[] {
+  return templates.map((t) => {
+    const sessionText = sessionTextFromTemplate(t);
+    const coaching = resolveCoaching({
+      id: t.id,
+      category: t.category,
+      difficulty: t.difficulty,
+      variant: t.variant,
+      tags: t.tags ?? [],
+      duration: t.duration,
+      equipment: t.equipment,
+      sessionText,
+    });
+
+    const hasProgression = Boolean(t.progressionNotes?.trim());
+    const hasSubs = Boolean(t.substitutionGuidance?.trim());
+    const hasCues = (t.coachingCues?.length ?? 0) > 0;
+
+    return {
+      ...t,
+      tags: t.tags ?? [],
+      progressionNotes: hasProgression ? t.progressionNotes! : coaching.progressionNotes,
+      coachingCues: hasCues ? t.coachingCues! : coaching.coachingCues,
+      substitutionGuidance: hasSubs ? t.substitutionGuidance! : coaching.substitutionGuidance,
+      rpeGuidance: t.rpeGuidance ?? coaching.rpeGuidance,
+    };
+  });
+}
+
+================================================================================
+FILE: src/data/workout-library/coaching-metadata/resolve.ts
+================================================================================
+import { HYROX_STATION_CUES } from '@/constants/hyrox-station-cues';
+import {
+  CATEGORY_SUBSTITUTION_DEFAULTS,
+  STATION_SUBSTITUTIONS,
+  SUBSTITUTION_PREAMBLE,
+} from '@/constants/workout-substitution-guidance';
+import type { WorkoutCategory, WorkoutDifficulty } from '@/types/workout';
+
+import { COACHING_OVERRIDES } from './overrides';
+import { buildProgressionNotes } from './progression';
+import { buildRpeGuidance } from './rpe';
+import { inferStationKeysFromTags } from './station-keys';
+
+export interface ResolvedCoaching {
+  progressionNotes: string;
+  rpeGuidance?: string;
+  coachingCues: string[];
+  substitutionGuidance: string;
+}
+
+export interface CoachingResolveInput {
+  id: string;
+  category: WorkoutCategory;
+  difficulty: WorkoutDifficulty;
+  variant?: string;
+  tags: string[];
+  duration: number;
+  equipment: string[];
+  /** Full session text for RPE detection (main set + blocks). */
+  sessionText: string;
+}
+
+function buildSubstitutionGuidance(tags: string[], category: WorkoutCategory): string {
+  const lines: string[] = [SUBSTITUTION_PREAMBLE];
+  const stationKeys = inferStationKeysFromTags(tags);
+  for (const key of stationKeys) {
+    lines.push(STATION_SUBSTITUTIONS[key]);
+  }
+  const catDefault = CATEGORY_SUBSTITUTION_DEFAULTS[category];
+  if (catDefault && !lines.some((l) => l === catDefault)) {
+    lines.push(catDefault);
+  }
+  if (tags.includes('multi_modal')) {
+    lines.push('Rotate modalities in order prescribed — do not shorten one segment to rush another.');
+  }
+  return lines.join('\n\n');
+}
+
+function buildCoachingCues(tags: string[], extraCues?: string[]): string[] {
+  const keys = inferStationKeysFromTags(tags);
+  const cues: string[] = [];
+  for (const key of keys) {
+    cues.push(...HYROX_STATION_CUES[key]);
+  }
+  if (extraCues?.length) {
+    cues.push(...extraCues);
+  }
+  return [...new Set(cues)];
+}
+
+export function resolveCoaching(input: CoachingResolveInput): ResolvedCoaching {
+  const override = COACHING_OVERRIDES[input.id];
+  const ctx = {
+    id: input.id,
+    category: input.category,
+    difficulty: input.difficulty,
+    variant: input.variant,
+    tags: input.tags,
+    duration: input.duration,
+  };
+
+  const progressionNotes =
+    override?.progressionNotes ??
+    buildProgressionNotes(ctx);
+
+  const rpeGuidance =
+    override?.rpeGuidance ??
+    buildRpeGuidance(
+      {
+        category: input.category,
+        difficulty: input.difficulty,
+        variant: input.variant,
+        tags: input.tags,
+      },
+      input.sessionText
+    );
+
+  const coachingCues = buildCoachingCues(input.tags, override?.extraCues);
+
+  const substitutionGuidance =
+    override?.substitutionGuidance ??
+    buildSubstitutionGuidance(input.tags, input.category);
+
+  return {
+    progressionNotes,
+    rpeGuidance,
+    coachingCues,
+    substitutionGuidance,
+  };
+}
+
+================================================================================
+FILE: src/data/workout-library/coaching-metadata/progression.ts
+================================================================================
+import type { WorkoutCategory, WorkoutDifficulty } from '@/types/workout';
+
+export interface ProgressionContext {
+  id: string;
+  category: WorkoutCategory;
+  difficulty: WorkoutDifficulty;
+  variant?: string;
+  tags: string[];
+  duration: number;
+}
+
+function phaseHint(tags: string[]): string {
+  if (tags.includes('taper_phase')) {
+    return ' In taper weeks, hold load and trim 10–15% volume if legs feel flat.';
+  }
+  if (tags.includes('peak_phase')) {
+    return ' In peak phase, prioritize race-pace intent over adding volume.';
+  }
+  if (tags.includes('build_phase')) {
+    return ' In build phase, progress one variable at a time (load, reps, or density).';
+  }
+  if (tags.includes('base_phase')) {
+    return ' In base phase, nail technique and consistency before chasing load.';
+  }
+  return '';
+}
+
+function beginnerRunning(ctx: ProgressionContext): string {
+  const phase = phaseHint(ctx.tags);
+  return (
+    `Build confidence first: finish every session feeling like you could do one more easy minute. ` +
+    `When walk breaks are optional, extend continuous jogging by 2 min per week (max +10 min/month). ` +
+    `Keep easy days at RPE 5–6 — talking pace.${phase}`
+  );
+}
+
+function runningProgression(ctx: ProgressionContext): string {
+  if (ctx.tags.includes('beginner') || ctx.tags.includes('walk_run')) {
+    return beginnerRunning(ctx);
+  }
+  const phase = phaseHint(ctx.tags);
+  if (ctx.variant === 'long') {
+    return (
+      `Add 5–10 min every 1–2 weeks while staying in Zone 2 (RPE 6–7). ` +
+      `Last 15 min of long runs should feel steady, not strained. Practice race fueling on runs over 50 min.${phase}`
+    );
+  }
+  if (ctx.variant === 'tempo' || ctx.tags.includes('threshold')) {
+    return (
+      `When you complete all reps at the same split, add 1 rep or 2 min to the tempo block next week. ` +
+      `Tempo = RPE 7–8, controlled breathing.${phase}`
+    );
+  }
+  if (ctx.variant === 'speed' || ctx.tags.includes('intervals')) {
+    return (
+      `Hold interval splits within 2–3 sec before adding reps. Speed days: RPE 8–9 on work, full recovery on rest. ` +
+      `Never stack hard run days back-to-back with HYROX station work.${phase}`
+    );
+  }
+  return (
+    `Easy runs stay RPE 6–7. Progress duration 5 min every 1–2 weeks or add strides, not both in the same week.${phase}`
+  );
+}
+
+function strengthProgression(ctx: ProgressionContext): string {
+  const phase = phaseHint(ctx.tags);
+  if (ctx.difficulty === 'beginner') {
+    return (
+      `Add 1–2 reps per set when the last set feels like RPE 6. ` +
+      `Master the pattern before adding load. Rest full 90 sec between rounds.${phase}`
+    );
+  }
+  if (ctx.category === 'strength_upper' || ctx.tags.includes('upper_body')) {
+    return (
+      `Progress primary lifts when the top set is RPE 7–8 with clean form. ` +
+      `Keep horizontal push and pull volume balanced (1:1 sets). ` +
+      `If pressing dominates, add one back-off set of rows before increasing bench load.${phase}`
+    );
+  }
+  if (ctx.tags.includes('sled_push') || ctx.tags.includes('sled_pull')) {
+    return (
+      `Progress sled work by load (2.5–5 kg) or one extra rep per week, not both. ` +
+      `Splits should stay within 3 sec before loading heavier.${phase}`
+    );
+  }
+  return (
+    `Add 2.5–5 kg or one rep per set when working sets are RPE 7 with 2 reps in reserve. ` +
+    `Deload every 4th week if soreness stacks across squats and running.${phase}`
+  );
+}
+
+function hyroxProgression(ctx: ProgressionContext): string {
+  const phase = phaseHint(ctx.tags);
+  if (ctx.tags.includes('hyrox_simulation') || ctx.variant === 'simulation') {
+    return (
+      `Run simulations at race effort (RPE 8–9 on stations, controlled 1 km runs). ` +
+      `Log transition times. Progress by shaving rest 15–30 sec or adding one station round before adding load.${phase}`
+    );
+  }
+  if (ctx.tags.includes('skills') || ctx.variant === 'stations') {
+    return (
+      `Track station splits each week. When the last round matches the first (+/- 5 sec), add one rep or 50 m distance. ` +
+      `Technique before speed on ski, row, and sled.${phase}`
+    );
+  }
+  return (
+    `Progress hybrid sessions by density (shorter rest) before adding rounds. ` +
+    `Aim even splits round-to-round — if round 4 drops >10%, scale rest next time.${phase}`
+  );
+}
+
+function conditioningProgression(ctx: ProgressionContext): string {
+  const phase = phaseHint(ctx.tags);
+  if (ctx.difficulty === 'beginner') {
+    return (
+      `Complete all rounds at RPE 6–7 before shortening rest. ` +
+      `Walk during rest is fine — consistency beats speed early.${phase}`
+    );
+  }
+  return (
+    `Beat last week's score by one round or 30 sec before adding complexity. ` +
+    `Conditioning work: RPE 7–8 sustainable, RPE 9 only on named peak sessions.${phase}`
+  );
+}
+
+function recoveryProgression(ctx: ProgressionContext): string {
+  return (
+    `No progression on load — add 5 min easy movement only if you finish feeling fresher than you started. ` +
+    `If soreness is high (RPE 7+ walking), swap to mobility-only for the day.`
+  );
+}
+
+export function buildProgressionNotes(ctx: ProgressionContext): string {
+  switch (ctx.category) {
+    case 'running':
+      return runningProgression(ctx);
+    case 'strength_upper':
+    case 'strength_lower':
+    case 'full_body_strength':
+      return strengthProgression(ctx);
+    case 'hyrox':
+      return hyroxProgression(ctx);
+    case 'conditioning':
+      return conditioningProgression(ctx);
+    case 'recovery':
+      return recoveryProgression(ctx);
+    default:
+      return conditioningProgression(ctx);
+  }
+}
+
+================================================================================
+FILE: src/data/workout-library/coaching-metadata/rpe.ts
+================================================================================
+import type { WorkoutCategory, WorkoutDifficulty } from '@/types/workout';
+
+const RPE_IN_TEXT = /\bRPE\s*[0-9]/i;
+
+export function sessionTextHasRpe(text: string): boolean {
+  return RPE_IN_TEXT.test(text);
+}
+
+export interface RpeContext {
+  category: WorkoutCategory;
+  difficulty: WorkoutDifficulty;
+  variant?: string;
+  tags: string[];
+}
+
+export function buildRpeGuidance(ctx: RpeContext, sessionText: string): string | undefined {
+  if (sessionTextHasRpe(sessionText)) {
+    return undefined;
+  }
+
+  if (ctx.category === 'recovery') {
+    return 'RPE 3–4 throughout — you should finish feeling better than when you started.';
+  }
+
+  if (ctx.category === 'running') {
+    if (ctx.variant === 'speed' || ctx.tags.includes('intervals')) {
+      return 'Work intervals RPE 8–9; recovery jogs/walks RPE 4–5.';
+    }
+    if (ctx.variant === 'tempo' || ctx.tags.includes('threshold')) {
+      return 'Tempo blocks RPE 7–8 — controlled hard, not a sprint.';
+    }
+    if (ctx.tags.includes('beginner') || ctx.tags.includes('walk_run')) {
+      return 'Easy jog segments RPE 5–6; walk breaks RPE 3–4.';
+    }
+    return 'Steady aerobic work RPE 6–7 — full sentences out loud.';
+  }
+
+  if (ctx.category === 'strength_upper' || ctx.category === 'strength_lower' || ctx.category === 'full_body_strength') {
+    if (ctx.difficulty === 'beginner') {
+      return 'Working sets RPE 6–7 — 2–3 reps left in the tank; form beats load.';
+    }
+    return 'Primary lifts RPE 7–8; accessories RPE 7; stop a set if bar speed slows.';
+  }
+
+  if (ctx.category === 'hyrox') {
+    if (ctx.tags.includes('hyrox_simulation')) {
+      return 'Runs RPE 7–8; stations RPE 8–9 on race-pace simulations; skills days RPE 6–7.';
+    }
+    if (ctx.tags.includes('skills')) {
+      return 'Station reps RPE 6–7 — drill quality; last round may reach RPE 8.';
+    }
+    return 'Mixed sessions: runs RPE 7, stations RPE 7–8 unless noted race pace.';
+  }
+
+  if (ctx.category === 'conditioning') {
+    if (ctx.difficulty === 'beginner') {
+      return 'RPE 6–7 — steady breathing, no redline on round 1.';
+    }
+    if (ctx.tags.includes('anaerobic') || ctx.tags.includes('tabata')) {
+      return 'Work periods RPE 9; rest periods full reset to RPE 4.';
+    }
+    return 'Sustainable metcon RPE 7–8; peak pieces may touch RPE 9 on the last round only.';
+  }
+
+  return 'Most work RPE 6–8 — adjust rest before adding rounds.';
+}
+
+================================================================================
+FILE: src/data/workout-library/coaching-metadata/overrides.ts
+================================================================================
+/** Per-workout coaching enhancements — merged on top of category defaults. */
+export interface CoachingOverride {
+  progressionNotes?: string;
+  rpeGuidance?: string;
+  extraCues?: string[];
+  substitutionGuidance?: string;
+}
+
+export const COACHING_OVERRIDES: Record<string, CoachingOverride> = {
+  // —— Aerobic ——
+  'AER-001': {
+    progressionNotes:
+      'Treat this as your weekly anchor easy run. Add 5 min only after two consecutive weeks at RPE 6 with no walk breaks.',
+    extraCues: ['If you cannot nose-breathe, slow down — that is your Zone 2 ceiling today.'],
+  },
+  'AER-004': {
+    progressionNotes:
+      'Success = finishing smiling. Extend the jog segments by 30 sec before shortening walks. Never skip the walk breaks early — they build volume safely.',
+  },
+  'AER-010': {
+    progressionNotes:
+      'When 2 min jog / 1 min walk feels easy (RPE 5–6), try 3 min jog / 1 min walk for two weeks before dropping walks entirely.',
+  },
+  'AER-013': {
+    progressionNotes:
+      'Row aerobic base for HYROX: add 3 min per week max. Grip should stay relaxed — tense forearms predict farmer carry fatigue.',
+  },
+  'AER-014': {
+    progressionNotes:
+      '1000 m repeats should land within 5 sec — then add a 6th rep or trim rest by 15 sec, not both.',
+  },
+  // —— Speed ——
+  'SPD-003': {
+    progressionNotes:
+      'Strides are neuromuscular skill, not a workout. Keep easy run truly easy (RPE 5). Add one stride per week up to 8 before increasing stride duration.',
+  },
+  'SPD-005': {
+    progressionNotes:
+      'HYROX 1 km pace: log splits. Progress when all four reps are within 5 sec — then add 1 rep or 15 sec faster average, not both.',
+  },
+  // —— Strength ——
+  'STR-004': {
+    progressionNotes:
+      'Master goblet depth and RDL hinge before adding weight. Add 2 reps per set when RPE 6, then load. This session should feel doable every week.',
+  },
+  'STR-005': {
+    progressionNotes:
+      'HYROX upper prep: keep bench and row sets equal. Progress bench only if rows stay within 1 rep of press performance. Face pulls every session protect ski pull shoulders.',
+    extraCues: ['Ski pull is a horizontal pull under fatigue — rows at RPE 7 are race-specific.'],
+  },
+  'STR-008': {
+    progressionNotes:
+      'Wall ball sets: add 3 reps per week before load. Pair every push-heavy set with scapular work — add 1×12 band pull-aparts if shoulders feel tight.',
+    rpeGuidance: 'Push press RPE 7–8; wall balls RPE 7 (unbroken sets); get-ups RPE 6 technique focus.',
+  },
+  'STR-011': {
+    progressionNotes:
+      'Circuit habit > load. When 3 rounds feel easy at RPE 6, add a 4th round before heavier dumbbells. Rows and press stay equal reps.',
+  },
+  'STR-015': {
+    progressionNotes:
+      'Complexes are race rehearsal: log time per complex. Progress by 2.5 kg on squat or −15 sec rest, never both in one week.',
+  },
+  // —— Skills ——
+  'SKL-005': {
+    progressionNotes:
+      '8×15 m sled push: when last rep matches rep 1 split, add 2.5 kg or one rep. Low hips every step — film rep 1 and rep 8.',
+  },
+  'SKL-006': {
+    progressionNotes:
+      'Sled pull: progress load when you can walk backward without rope slack for full 12.5 m. Substitute rows must be heavy RPE 8.',
+  },
+  'SKL-007': {
+    progressionNotes:
+      'Track wall ball break points. When round 5 matches round 1 breaks, add 5 reps per round or −15 sec rest.',
+  },
+  'SKL-008': {
+    progressionNotes:
+      'Technique day only — no redline. When step-back burpees are smooth, progress to full burpees for the final 3×10 only.',
+  },
+  'SKL-010': {
+    progressionNotes:
+      'Carry skill: add 10 m per week before load. Tall posture beats speed — dropped implements cost more than 5 sec.',
+  },
+  // —— Hybrid ——
+  'HYB-003': {
+    progressionNotes:
+      'Beginner hybrid: same round times matter more than speed. When burpees stay unbroken in sets of 5, try sets of 7 next block.',
+  },
+  'HYB-011': {
+    progressionNotes:
+      'Confidence circuit — incline push-ups and walk/jog are wins. Add one round only when RPE never exceeds 7.',
+  },
+  'HYB-016': {
+    progressionNotes:
+      'DB + run intro: add 1 rep per movement before shortening rest. Keep runs at conversational RPE 6.',
+  },
+  'HYB-008': {
+    progressionNotes:
+      'Mini race simulation — log total time. Progress by −30 sec rest between legs or +1 station round after two even efforts.',
+  },
+  'HYB-017': {
+    progressionNotes:
+      'Race-pace brick: sled push 50 m at competition load before adding run volume.',
+  },
+  // —— Engine ——
+  'ENG-001': {
+    progressionNotes:
+      'Full simulation density: progress by −30 sec between-round rest when run splits stay within 10 sec.',
+  },
+  'ENG-002': {
+    progressionNotes:
+      'Station brick at race intent — log 1 km run splits. Progress sled load 2.5 kg when run split does not slow >5 sec.',
+  },
+  'ENG-004': {
+    progressionNotes:
+      'Engine base for beginners: finish all rounds at RPE 6–7 for two weeks before removing one rest period.',
+  },
+  'ENG-008': {
+    progressionNotes:
+      'Full race order rehearsal — fueling at 45 min is mandatory practice. Do not add stations; sharpen transitions.',
+  },
+  // —— Recovery ——
+  'RCV-002': {
+    progressionNotes:
+      'Active recovery only — if HR drifts above easy jog, walk 2 min. No progression except +5 min when sleep and soreness are green.',
+  },
+  // —— Generator — running ——
+  'GEN-RUN-BEG-EASY': {
+    progressionNotes:
+      'Run-walk is the product — add 30 sec to each jog interval before dropping a walk. Strides are optional skill, not fitness.',
+  },
+  'GEN-RUN-BEG-TEMPO': {
+    progressionNotes:
+      'First tempo exposure: all reps at RPE 6–7. Add 1 min to tempo only when walk recoveries feel easy.',
+  },
+  'GEN-RUN-SPD-1K': {
+    progressionNotes:
+      'HYROX 1 km repeats at RPE 8 — match race fueling. Progress when 4 reps land within 5 sec.',
+  },
+  // —— Generator — strength ——
+  'GEN-STR-LOWER-BASE': {
+    progressionNotes:
+      'Foundation lower: add 2 reps before load on goblet and RDL. Sled optional — walking lunges substitute at same RPE.',
+  },
+  'GEN-STR-UPPER-STANDARD': {
+    progressionNotes:
+      'Balance push and pull weekly. If bench progresses, row must progress the same week — 1:1 set count is non-negotiable for HYROX.',
+    extraCues: ['SkiErg pull is lat-driven — rows and face pulls are race-specific, not accessory.'],
+  },
+  'PERF-STR-UPPER': {
+    progressionNotes:
+      'Performance upper: prioritize pull volume equal to press. Add a back-off row set before increasing press load.',
+  },
+  // —— Generator — HYROX ——
+  'GEN-HYROX-SIM': {
+    progressionNotes:
+      'Simulation at RPE 8–9 on stations. Progress by shaving transition time or −30 sec rest, not extra rounds, until splits are even.',
+  },
+  'GEN-HYROX-SIM-HEAVY': {
+    progressionNotes:
+      'Heavy simulation: sled at race load minimum. Progress load 2.5 kg only when 1 km run after sled is within 5 sec of fresh run.',
+  },
+  'GEN-HYROX-SKL-SLED': {
+    progressionNotes:
+      'Sled skill combo: when push and pull splits match week 1, add one rep per week or 2.5 kg — one variable only.',
+  },
+  'GEN-HYROX-SKL-GENERAL': {
+    progressionNotes:
+      'General station day: even pacing round to round. Add 5 wall balls or 10 m lunges per week before shortening rest.',
+  },
+  'GEN-COND-BURPEE': {
+    progressionNotes:
+      'Burpee density: hold cycle time round 1 vs 4 within 3 sec before adding reps or removing rest.',
+  },
+};

@@ -4,11 +4,16 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~56.0.14",
-    "expo": "~56.0.5",
+    "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "date-fns": "^4.3.0",
+    "expo": "~56.0.6",
+    "expo-asset": "~56.0.15",
     "expo-constants": "~56.0.16",
     "expo-device": "~56.0.4",
     "expo-font": "~56.0.5",
     "expo-glass-effect": "~56.0.4",
+    "expo-haptics": "^56.0.3",
     "expo-image": "~56.0.9",
     "expo-linking": "~56.0.12",
     "expo-router": "~56.2.7",
@@ -25,19 +30,24 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "0.8.3"
+    "react-native-worklets": "0.8.3",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@types/node": "^22.15.29",
     "@types/react": "~19.2.2",
+    "tsx": "^4.19.4",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
+    "start:go": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "tsx --test src/lib/workout-scoring.test.ts src/lib/week-phase.test.ts src/lib/coaching-engine/select-template.test.ts src/lib/coaching-engine/weakness-balancing.test.ts src/lib/coaching-engine/beginner-runner-protection.test.ts src/lib/coaching-engine/fatigue-management.test.ts src/lib/coaching-engine/upper-body-minimum.test.ts src/lib/coaching-engine/strength-assignment.test.ts src/lib/coaching-engine/hyrox-simulation-exposure.test.ts src/lib/coaching-engine/recovery-insertion.test.ts"
   },
   "private": true
 }

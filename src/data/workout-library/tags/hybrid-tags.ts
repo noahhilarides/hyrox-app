@@ -1,0 +1,23 @@
+/** Tags for HYB-* */
+export const HYBRID_TAGS: Record<string, string[]> = {
+  'HYB-001': ['hybrid', 'conditioning', 'wall_ball', 'burpees', 'lunges', 'build_phase', 'intermediate'],
+  'HYB-002': ['hybrid', 'strength_endurance', 'running', 'build_phase', 'intermediate'],
+  'HYB-003': ['hybrid', 'burpees', 'lunges', 'running', 'base_phase', 'beginner'],
+  'HYB-004': ['hybrid', 'rowing', 'running', 'brick', 'build_phase', 'intermediate'],
+  'HYB-005': ['hybrid', 'ski_erg', 'wall_ball', 'hyrox_station', 'build_phase', 'intermediate'],
+  'HYB-006': ['hybrid', 'sled_push', 'hyrox_run', 'running', 'build_phase', 'intermediate'],
+  'HYB-007': ['hybrid', 'farmer_carry', 'running', 'build_phase', 'intermediate'],
+  'HYB-008': ['hyrox_simulation', 'race_specific', 'running', 'ski_erg', 'rowing', 'wall_ball', 'peak_phase', 'advanced'],
+  'HYB-009': ['hybrid', 'conditioning', 'emom', 'pacing', 'build_phase', 'intermediate'],
+  'HYB-010': ['hybrid', 'wall_ball', 'running', 'ladder', 'build_phase', 'intermediate'],
+  'HYB-011': ['hybrid', 'circuit', 'base_phase', 'beginner'],
+  'HYB-012': ['hybrid', 'sled_pull', 'rowing', 'running', 'build_phase', 'intermediate'],
+  'HYB-013': ['hybrid', 'wall_ball', 'hyrox_station', 'volume', 'peak_phase', 'advanced'],
+  'HYB-014': ['hybrid', 'multi_modal', 'running', 'rowing', 'ski_erg', 'build_phase', 'intermediate'],
+  'HYB-015': ['hybrid', 'burpees', 'hyrox_run', 'volume', 'peak_phase', 'advanced'],
+  'HYB-016': ['hybrid', 'dumbbells', 'running', 'base_phase', 'beginner'],
+  'HYB-017': ['hyrox_simulation', 'race_specific', 'hyrox_run', 'sled_push', 'peak_phase', 'advanced'],
+  'HYB-018': ['hybrid', 'lunges', 'running', 'hyrox_station', 'build_phase', 'intermediate'],
+  'HYB-019': ['hybrid', 'chipper', 'conditioning', 'build_phase', 'intermediate'],
+  'HYB-020': ['hybrid', 'ski_erg', 'wall_ball', 'station_stack', 'peak_phase', 'advanced'],
+};
