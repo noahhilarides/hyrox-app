@@ -8,8 +8,8 @@ import {
 
 import type { Workout } from '@/types';
 
-/** Sun–Sat week; Sunday is the 1st column. */
-export const CALENDAR_WEEK_STARTS_ON = 0;
+/** Mon–Sun week; Monday is the 1st column (matches training plan weeks). */
+export const CALENDAR_WEEK_STARTS_ON = 1;
 
 export function buildMonthGridDays(month: Date): Date[] {
   return eachDayOfInterval({
@@ -24,4 +24,12 @@ export function buildWorkoutMap(workouts: Workout[]): Map<string, Workout> {
   return map;
 }
 
-export const CALENDAR_WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
+export const CALENDAR_WEEKDAY_LABELS = [
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+] as const;

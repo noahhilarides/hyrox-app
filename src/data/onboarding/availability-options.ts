@@ -26,13 +26,13 @@ export const DAYS_PER_WEEK_OPTIONS: DaysPerWeekOption[] = [
 ];
 
 export const LONG_SESSION_DAY_OPTIONS: LongSessionDayOption[] = [
-  { value: 'mon', label: 'Monday', short: 'M' },
-  { value: 'tue', label: 'Tuesday', short: 'T' },
-  { value: 'wed', label: 'Wednesday', short: 'W' },
-  { value: 'thu', label: 'Thursday', short: 'T' },
-  { value: 'fri', label: 'Friday', short: 'F' },
-  { value: 'sat', label: 'Saturday', short: 'S' },
-  { value: 'sun', label: 'Sunday', short: 'S' },
+  { value: 'mon', label: 'Monday', short: 'Mon' },
+  { value: 'tue', label: 'Tuesday', short: 'Tue' },
+  { value: 'wed', label: 'Wednesday', short: 'Wed' },
+  { value: 'thu', label: 'Thursday', short: 'Thu' },
+  { value: 'fri', label: 'Friday', short: 'Fri' },
+  { value: 'sat', label: 'Saturday', short: 'Sat' },
+  { value: 'sun', label: 'Sunday', short: 'Sun' },
 ];
 
 export const SESSION_DURATION_OPTIONS: SessionDurationOption[] = [

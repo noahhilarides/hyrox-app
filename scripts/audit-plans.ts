@@ -86,9 +86,9 @@ const AUDIT_PROFILES: { label: string; profile: OnboardingProfile }[] = [
     },
   },
   {
-    label: '4. Performance Athlete',
+    label: '4. Hybrid Athlete (no race)',
     profile: {
-      goal: 'performance_training',
+      goal: 'hybrid_fitness',
       raceDate: null,
       fitnessLevel: 'advanced',
       runningExperience: 'competitive',
@@ -250,9 +250,7 @@ function verifyPlan(label: string, profile: OnboardingProfile, workouts: Workout
   checks['Recovery'] =
     recovery.length > 0
       ? `PASS (${recovery.length} sessions, ${preferredRcv} preferred RCV)`
-      : profile.goal === 'performance_training'
-        ? 'n/a (performance plan)'
-        : 'FAIL (none)';
+      : 'FAIL (none)';
 
   // Simulations
   const sims = workouts.filter((w) => w.type === 'race_sim');

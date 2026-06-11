@@ -30,7 +30,6 @@ export const GOAL_TAGS: Record<Goal, readonly string[]> = {
   endurance: ['running', 'aerobic', 'zone2', 'endurance', 'long_run'],
   strength: ['strength', 'legs', 'upper_body', 'full_body', 'squat', 'deadlift'],
   return_to_fitness: ['base_phase', 'beginner', 'foundation', 'walk_run'],
-  performance_training: ['performance_training'],
 };
 
 const PHASE_TAGS: Record<WeekPhase, string> = {

@@ -20,11 +20,13 @@ const WEAKNESS_SUMMARY_LABEL: Record<OnboardingWeakness, string> = {
   running_endurance: 'compromised running',
   ski_erg: 'ski erg efficiency',
   sled_push: 'sled endurance',
+  sled_pull: 'sled pull strength',
   burpees: 'burpee broad jump',
   grip_fatigue: 'grip under fatigue',
   recovery: 'between-session recovery',
   pacing: 'pacing',
   lunges: 'walking lunges',
+  wall_balls: 'wall balls under fatigue',
   rowing: 'rowing power',
 };
 
@@ -67,8 +69,6 @@ function buildPlanTitle(draft: OnboardingDraft): string {
     if (city) return `HYROX ${city} Race Plan`;
     return 'HYROX Race Plan';
   }
-
-  if (draft.goal === 'performance_training') return 'Performance Training Plan';
 
   const goalOption = GOAL_OPTIONS.find((g) => g.value === draft.goal);
   if (goalOption) return `${goalOption.title} Plan`;

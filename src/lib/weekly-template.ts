@@ -1,7 +1,3 @@
-import {
-  getPerformanceWeeklySlots,
-  isPerformanceTrainingGoal,
-} from '@/lib/performance-training';
 import { weekPhase, type WeekPhase } from '@/lib/recovery-prescription';
 import {
   isAdvancedAthlete,
@@ -22,10 +18,6 @@ export function buildBaseWeeklyTemplate(
   const phase = weekPhase(weekIndex, totalWeeks);
   const goal = profile.goal;
 
-  if (isPerformanceTrainingGoal(goal)) {
-    return getPerformanceWeeklySlots(days).map((s) => s.type);
-  }
-
   if (goal === 'endurance') {
     return templateForEndurance(days);
   }
@@ -43,7 +35,7 @@ export function buildBaseWeeklyTemplate(
     return ['strength', 'run', 'hyrox', 'skills'];
   }
   if (days === 5) {
-    return templateForFiveDays(profile);
+    return templateForFiveDays(profile, weekIndex);
   }
   return templateForSixDays(profile, phase);
 }
@@ -69,9 +61,12 @@ function templateForReturnToFitness(days: number): WorkoutType[] {
   return ['strength', 'run', 'skills', 'hyrox', 'run', 'skills'];
 }
 
-function templateForFiveDays(profile: OnboardingProfile): WorkoutType[] {
+function templateForFiveDays(profile: OnboardingProfile, weekIndex: number): WorkoutType[] {
   if (isBeginnerAthlete(profile)) {
-    return ['strength', 'run', 'skills', 'hyrox', 'run'];
+    const evenWeek = weekIndex % 2 === 0;
+    return evenWeek
+      ? ['strength', 'run', 'skills', 'run', 'hyrox']
+      : ['strength', 'run', 'hyrox', 'run', 'skills'];
   }
   if (isAdvancedAthlete(profile)) {
     return ['strength', 'speed', 'hyrox', 'skills', 'run'];
@@ -103,9 +98,5 @@ export function applyRecoveryToTemplate(
   _weekIndex: number,
   _totalWeeks: number
 ): WorkoutType[] {
-  if (isPerformanceTrainingGoal(profile.goal)) {
-    return template.filter((t) => t !== 'recovery');
-  }
-
   return template.map((type) => (type === 'recovery' ? 'skills' : type));
 }

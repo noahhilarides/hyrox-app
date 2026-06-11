@@ -1,6 +1,7 @@
 import { addDays, format, isSameDay, parseISO, startOfWeek } from 'date-fns';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { CALENDAR_WEEK_STARTS_ON } from '@/components/calendar/calendar-utils';
 import { AppText } from '@/components/ui/text';
 import { palette, radius, spacing, workoutColors } from '@/constants/tokens';
 import type { Workout } from '@/types';
@@ -19,7 +20,7 @@ export function WeekCalendar({
   compact,
 }: WeekCalendarProps) {
   const anchor = parseISO(selectedDate);
-  const weekStart = startOfWeek(anchor, { weekStartsOn: 1 });
+  const weekStart = startOfWeek(anchor, { weekStartsOn: CALENDAR_WEEK_STARTS_ON });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   return (

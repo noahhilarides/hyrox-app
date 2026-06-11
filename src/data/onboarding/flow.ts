@@ -65,13 +65,6 @@ export const ONBOARDING_FLOW: OnboardingFlowStep[] = [
     countsInProgress: true,
   },
   {
-    id: 'interests',
-    route: '/(onboarding)/interests',
-    title: 'Interests',
-    headerTitle: 'Expansion',
-    countsInProgress: true,
-  },
-  {
     id: 'plan-start',
     route: '/(onboarding)/plan-start',
     title: 'Start date',

@@ -178,3 +178,41 @@ Coaching engine test suites under `src/lib/coaching-engine/*.test.ts` plus `work
 ---
 
 *Last updated: build session covering workout library reformat, coaching engine fixes, race onboarding, and recovery removal from generated plans.*
+
+---
+
+## June 2026 — Phase 2 + Goal Consolidation + performance_training Removal
+
+### Generator (v2) — now complete across the board
+- All 12 weekly structures built and verified: beginner/intermediate/advanced × 3/4/5/6-day (elite folds into advanced upstream).
+- All levels/day-counts route to v2 via `v2SupportsProfile` (any 3–6 day profile).
+- Long runways: `PLAN_WEEKS_MAX` raised to 36; extra weeks pool into base (verified 32-week beginner = base16/build10/peak4/taper2).
+- `scaleMovement` fixed: reps round to nearest 5, ergs (ski/row) to nearest 50m, sled stays fixed at base (progressed by load not distance — real coaching), farmers carry capped at 200m (race distance). Numbers now clean and coach-real; they scale UP from each piece's base instead of overwriting it.
+- Ultra conditioning pieces added (were falling back to a weak placeholder).
+- 3-day beginner made run-heavier (run_speed in middle slot) since limited days need compromised-running value.
+
+### Two goals (consolidated from six)
+- Onboarding now shows only **HYROX Race Prep** (`hyrox_race`) and **Hybrid Training** (`hybrid_fitness`).
+- Race mode: base→build→peak→taper toward race date. Rolling mode (no race date): base→build sustained, never peaks/tapers.
+- Wired via `weekPhase(…, mode)` + `mode` threaded through `generate-plan.ts` and `to-training-plan.ts` (computed from `profile.raceDate`).
+- Strength progression is independent of mode — hybrid lifts still climb week to week.
+- Onboarding session-duration question removed (plan shows an estimated time; user no longer picks). `preferredSessionMinutes` defaults to 45 so downstream code is safe.
+
+### performance_training fully removed
+- Goal value, `performance-training/` module, and `constants/performance-training.ts` deleted.
+- All `isPerformanceTrainingGoal` branches removed across plan-generator, coaching-engine, plan-progression, weekly-template — they fall through to default.
+- 2 obsolete tests retired (asserted old-generator template IDs / race_sim cadence on profiles that now route to v2).
+
+### State at end of session
+- `npx tsc --noEmit` → exit 0
+- Tests: 57 pass / 0 fail / 1 skipped (documented)
+- v2 generator verified rendering correctly in the app (sections, run/walk, clean numbers, HYROX labels).
+
+### Open items / next session
+- 3 vestigial goals (`endurance`, `strength`, `return_to_fitness`) still in the `Goal` type and route to the old engine, but are UNSELECTABLE in onboarding → harmless. Trim anytime.
+- Old coaching-engine still present (used only by those 3 dead goals + as v2's entry router in plan-generator). Full deletion deferred.
+- v2 has NO race-sim concept — race-prep plans don't rehearse the full 8-station event. Real future feature for serious racers.
+- Session durations are rough estimates, not tied to actual volume.
+- Add load/weight prescriptions to lifts/sled/carry (needs a real coach).
+- Pre-existing strength-assignment test still skipped/failing (title regex doesn't count "Sled Pull Strength" as lower) — unrelated to this work.
+- NON-GENERATOR launch work still pending: Activities screen, paywall/subscription, App Store submission (branding, screenshots, privacy policy, TestFlight, bundle IDs).

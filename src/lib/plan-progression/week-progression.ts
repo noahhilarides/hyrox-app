@@ -5,9 +5,6 @@ import {
   SLED_PROGRESSION,
   WALL_BALL_PROGRESSION,
 } from '@/constants/workout-progression-rules';
-import { isPerformanceTrainingGoal } from '@/lib/performance-training';
-import { blockWeekIndex } from '@/lib/performance-training/progression';
-import { PERFORMANCE_BLOCK_WEEKS } from '@/constants/performance-training';
 import type { WeekPhase } from '@/lib/recovery-prescription';
 import { weekPhase } from '@/lib/recovery-prescription';
 import { isAdvancedRunner } from '@/lib/profile-levels';
@@ -35,10 +32,8 @@ export function isPlanRecoveryWeek(
 ): boolean {
   if (weekIndex === 0) return false;
 
-  if (isPerformanceTrainingGoal(profile.goal)) {
-    return blockWeekIndex(weekIndex) === PERFORMANCE_BLOCK_WEEKS - 1;
-  }
-
+  // Only deload on plans long enough to need it, and not in the first 4 weeks
+  if (weekIndex < 4) return false;
   return (weekIndex + 1) % RECOVERY_WEEK_RULES.cycleWeeks === 0;
 }
 

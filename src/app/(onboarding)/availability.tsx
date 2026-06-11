@@ -5,13 +5,11 @@ import { ContinueButton } from '@/components/onboarding/continue-button';
 import { OnboardingContainer } from '@/components/onboarding/onboarding-container';
 import { OnboardingScreenIntro } from '@/components/onboarding/onboarding-screen-intro';
 import { OnboardingSection } from '@/components/onboarding/onboarding-section';
-import { SelectionCard } from '@/components/onboarding/selection-card';
 import { SelectionChip } from '@/components/onboarding/selection-chip';
 import { AppText } from '@/components/ui/text';
 import {
   DAYS_PER_WEEK_OPTIONS,
   LONG_SESSION_DAY_OPTIONS,
-  SESSION_DURATION_OPTIONS,
 } from '@/data/onboarding/availability-options';
 import { onboardingSpacing, onboardingTheme } from '@/data/onboarding/theme';
 import { useOnboardingNavigation } from '@/hooks/use-onboarding-navigation';
@@ -23,7 +21,6 @@ export default function AvailabilityScreen() {
   const setTrainingDays = useOnboardingStore((s) => s.setTrainingDays);
   const toggleWorkoutDay = useOnboardingStore((s) => s.toggleWorkoutDay);
   const setLongSessionDay = useOnboardingStore((s) => s.setLongSessionDay);
-  const setPreferredSessionMinutes = useOnboardingStore((s) => s.setPreferredSessionMinutes);
 
   const daysTarget = availability.daysPerWeek;
   const workoutDaysCount = availability.workoutDays.length;
@@ -37,7 +34,6 @@ export default function AvailabilityScreen() {
     daysTarget != null &&
     workoutDaysCount === daysTarget &&
     availability.longSessionDay != null &&
-    availability.preferredSessionMinutes != null &&
     longSessionValid;
 
   return (
@@ -126,22 +122,6 @@ export default function AvailabilityScreen() {
           </View>
         </OnboardingSection>
       </Animated.View>
-
-      <Animated.View entering={FadeInDown.delay(240).duration(350)}>
-        <OnboardingSection title="Session duration" subtitle="Typical time per workout.">
-          <View style={styles.durationGrid}>
-            {SESSION_DURATION_OPTIONS.map((option) => (
-              <SelectionCard
-                key={option.value}
-                label={option.label}
-                description={option.description}
-                selected={availability.preferredSessionMinutes === option.value}
-                onPress={() => setPreferredSessionMinutes(option.value)}
-              />
-            ))}
-          </View>
-        </OnboardingSection>
-      </Animated.View>
     </OnboardingContainer>
   );
 }
@@ -177,9 +157,5 @@ const styles = StyleSheet.create({
     marginTop: onboardingSpacing.sm,
     fontSize: 13,
     color: onboardingTheme.accent,
-  },
-  durationGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
   },
 });

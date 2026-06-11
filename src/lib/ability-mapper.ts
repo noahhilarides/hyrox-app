@@ -18,11 +18,13 @@ const WEAKNESS_TO_PROFILE: Record<OnboardingWeakness, Weakness> = {
   running_endurance: 'running',
   ski_erg: 'rowing',
   sled_push: 'sleds',
+  sled_pull: 'sleds',
   burpees: 'burpees',
   grip_fatigue: 'strength',
   recovery: 'recovery',
   pacing: 'endurance',
   lunges: 'wall_balls',
+  wall_balls: 'wall_balls',
   rowing: 'rowing',
 };
 

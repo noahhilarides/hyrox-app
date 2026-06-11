@@ -1,5 +1,6 @@
 export {
   ALL_WORKOUT_TEMPLATES,
+  getAllWorkouts,
   getTemplateById,
   getWorkoutById,
   getWorkoutsByCategory,

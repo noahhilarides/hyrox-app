@@ -32,6 +32,12 @@ export const WEAKNESS_OPTIONS: WeaknessOption[] = [
     icon: 'arrow-forward-circle',
   },
   {
+    value: 'sled_pull',
+    label: 'Sled pull',
+    tagline: 'Posterior chain',
+    icon: 'arrow-back-circle',
+  },
+  {
     value: 'burpees',
     label: 'Burpees',
     tagline: 'Broad jump station',
@@ -44,22 +50,16 @@ export const WEAKNESS_OPTIONS: WeaknessOption[] = [
     icon: 'hand-left',
   },
   {
-    value: 'recovery',
-    label: 'Recovery',
-    tagline: 'Bounce-back between days',
-    icon: 'moon',
-  },
-  {
-    value: 'pacing',
-    label: 'Pacing',
-    tagline: 'Race rhythm & splits',
-    icon: 'timer',
-  },
-  {
     value: 'lunges',
     label: 'Lunges',
     tagline: 'Sandbag & walking lunges',
     icon: 'walk',
+  },
+  {
+    value: 'wall_balls',
+    label: 'Wall balls',
+    tagline: 'Legs & shoulders under fatigue',
+    icon: 'basketball',
   },
   {
     value: 'rowing',

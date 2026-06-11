@@ -14,7 +14,6 @@ import {
   PLAN_WEEKS_MAX,
   PLAN_WEEKS_MIN,
 } from '@/constants/plan-generation';
-import { PERFORMANCE_PLAN_WEEKS } from '@/constants/performance-training';
 import {
   assembleScheduledWorkout,
   type SlotResolveContext,
@@ -44,12 +43,11 @@ import {
   recordStationFocusForWeek,
 } from '@/lib/coaching-engine/weakness-balancing';
 import { computeWeekProgression } from '@/lib/plan-progression';
-import {
-  getPerformanceWeeklySlots,
-  isPerformanceTrainingGoal,
-  performanceWeeklyStructureLines,
-} from '@/lib/performance-training';
 import { weekPhase } from '@/lib/recovery-prescription';
+import {
+  generateTrainingPlanV2,
+  v2SupportsProfile,
+} from '@/lib/generator-v2/to-training-plan';
 import {
   applyRecoveryToTemplate,
   buildBaseWeeklyTemplate,
@@ -114,10 +112,6 @@ function adjustTemplateForProfile(
   profile: OnboardingProfile,
   phase: ReturnType<typeof weekPhase>
 ): WorkoutType[] {
-  if (isPerformanceTrainingGoal(profile.goal)) {
-    return types;
-  }
-
   let template = [...types];
 
   if (profile.fitnessLevel === 'beginner' || profile.runningExperience === 'none') {
@@ -165,7 +159,26 @@ function weeklyTemplate(
 }
 
 function sortTypesByWeakness(types: WorkoutType[], weaknesses: Weakness[]): WorkoutType[] {
-  return [...types].sort((a, b) => weaknessBoost(weaknesses, b) - weaknessBoost(weaknesses, a));
+  // First pass: stable sort by weakness boost (preserves original order for ties)
+  const sorted = types
+    .map((type, i) => ({ type, i }))
+    .sort((a, b) => {
+      const boost = weaknessBoost(weaknesses, b.type) - weaknessBoost(weaknesses, a.type);
+      return boost !== 0 ? boost : a.i - b.i;
+    })
+    .map((x) => x.type);
+
+  // Second pass: de-cluster — if a session type matches the previous day,
+  // swap it with the next different-typed session to break the streak
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === sorted[i - 1]) {
+      const swapWith = sorted.findIndex((t, j) => j > i && t !== sorted[i - 1]);
+      if (swapWith !== -1) {
+        [sorted[i], sorted[swapWith]] = [sorted[swapWith], sorted[i]];
+      }
+    }
+  }
+  return sorted;
 }
 
 /** First day sessions are scheduled — never before today. */
@@ -177,10 +190,6 @@ function resolvePlanStart(profile: OnboardingProfile): Date {
 }
 
 export function computePlanWeeks(profile: OnboardingProfile): number {
-  if (isPerformanceTrainingGoal(profile.goal)) {
-    return PERFORMANCE_PLAN_WEEKS;
-  }
-
   const planStart = resolvePlanStart(profile);
   const raceDate = profile.raceDate ? startOfDay(parseISO(profile.raceDate)) : null;
 
@@ -197,16 +206,12 @@ export function computePlanWeeks(profile: OnboardingProfile): number {
 }
 
 export function getWeeklyStructureLines(profile: OnboardingProfile): string[] {
-  if (isPerformanceTrainingGoal(profile.goal)) {
-    return performanceWeeklyStructureLines(profile.daysPerWeek);
-  }
-
   const totalWeeks = computePlanWeeks(profile);
   const weekIndex = Math.floor(totalWeeks * 0.45);
   const template = adjustTemplateForProfile(
     weeklyTemplate(weekIndex, totalWeeks, profile),
     profile,
-    weekPhase(weekIndex, totalWeeks)
+    weekPhase(weekIndex, totalWeeks, profile.fitnessLevel)
   );
 
   const counts = {
@@ -261,23 +266,23 @@ export function getWeeklyStructureLines(profile: OnboardingProfile): string[] {
  * select library template → apply week progression → calendar Workout.
  */
 export function generateTrainingPlan(profile: OnboardingProfile): TrainingPlan {
+  if (v2SupportsProfile(profile)) {
+    const planStartV2 = resolvePlanStart(profile);
+    const totalWeeksV2 = computePlanWeeks(profile);
+    return generateTrainingPlanV2(profile, totalWeeksV2, planStartV2);
+  }
+
   const today = startOfDay(new Date());
   const planStart = resolvePlanStart(profile);
-  const performance = isPerformanceTrainingGoal(profile.goal);
   const raceDate =
-    !performance && profile.raceDate ? startOfDay(parseISO(profile.raceDate)) : null;
+    profile.raceDate ? startOfDay(parseISO(profile.raceDate)) : null;
 
   const totalWeeks = computePlanWeeks(profile);
 
   let endDate = addDays(planStart, totalWeeks * 7 - 1);
-  if (performance) {
-    endDate = addDays(planStart, PERFORMANCE_PLAN_WEEKS * 7 - 1);
-  } else if (raceDate && isBefore(planStart, raceDate) && isBefore(raceDate, endDate)) {
+  if (raceDate && isBefore(planStart, raceDate) && isBefore(raceDate, endDate)) {
     endDate = raceDate;
   }
-  const performanceSlots = performance
-    ? getPerformanceWeeklySlots(profile.daysPerWeek)
-    : null;
 
   const trainingDayIndices = pickTrainingDays(
     profile.daysPerWeek,
@@ -294,23 +299,21 @@ export function generateTrainingPlan(profile: OnboardingProfile): TrainingPlan {
 
   while (!isBefore(endDate, cursor) && weekIndex < totalWeeks) {
     const weekStart = startOfWeek(cursor, { weekStartsOn: 1 });
-    const phase = weekPhase(weekIndex, totalWeeks);
+    const phase = weekPhase(weekIndex, totalWeeks, profile.fitnessLevel);
     const weekProgression = computeWeekProgression(weekIndex, totalWeeks, profile);
-    const template = performanceSlots
-      ? performanceSlots.map((s) => s.type)
-      : applyHyroxSimulationExposure(
-          adjustTemplateForProfile(
-            sortTypesByWeakness(
-              weeklyTemplate(weekIndex, totalWeeks, profile),
-              profile.weaknesses
-            ),
-            profile,
-            phase
-          ),
-          weekIndex,
-          totalWeeks,
-          profile
-        );
+    const template = applyHyroxSimulationExposure(
+      adjustTemplateForProfile(
+        sortTypesByWeakness(
+          weeklyTemplate(weekIndex, totalWeeks, profile),
+          profile.weaknesses
+        ),
+        profile,
+        phase
+      ),
+      weekIndex,
+      totalWeeks,
+      profile
+    );
 
     const lastRunSlot = template.lastIndexOf('run');
     let strengthOccurrenceInWeek = 0;
@@ -326,10 +329,6 @@ export function generateTrainingPlan(profile: OnboardingProfile): TrainingPlan {
       const plannedType = template[i % template.length]!;
       const isLongRun =
         plannedType === 'run' && i === lastRunSlot && profile.daysPerWeek >= 5;
-
-      const performanceKind = performanceSlots
-        ? performanceSlots[i % performanceSlots.length]!.kind
-        : undefined;
 
       let targetWeakness: Weakness | undefined;
       if (isStationWeaknessSlot(plannedType)) {
@@ -349,7 +348,6 @@ export function generateTrainingPlan(profile: OnboardingProfile): TrainingPlan {
           forceRaceSim: plannedType === 'race_sim',
           strengthIndex: 0,
           weekIndex,
-          performanceKind,
           targetWeakness,
         };
 
@@ -459,10 +457,6 @@ export function applyMissedWorkoutAdaptation(
   const updated = plan.workouts.map((w) =>
     w.date === missedDate ? { ...w, missed: true } : w
   );
-
-  if (isPerformanceTrainingGoal(profile.goal)) {
-    return { ...plan, workouts: updated };
-  }
 
   const nextIdx = updated.findIndex(
     (w) => w.date > missedDate && !w.completed && w.type === 'recovery'

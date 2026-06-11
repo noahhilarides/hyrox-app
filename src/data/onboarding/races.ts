@@ -1,5 +1,14 @@
 export type RaceDifficulty = 'Open' | 'Pro' | 'Mixed';
 
+export type RaceRegion =
+  | 'North America'
+  | 'Europe'
+  | 'Asia'
+  | 'South America'
+  | 'Australia'
+  | 'Africa'
+  | 'Middle East';
+
 export interface HyroxRaceEvent {
   id: string;
   name: string;
@@ -10,6 +19,8 @@ export interface HyroxRaceEvent {
   /** ISO date `yyyy-MM-dd` — last day when the event spans multiple days */
   endDate?: string;
   difficulty: RaceDifficulty;
+  region: RaceRegion;
+  country: string;
   imageUrl: string;
   /** Fallback gradient when image is loading */
   gradient: readonly [string, string];
@@ -26,8 +37,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-05-28',
     endDate: '2026-06-07',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'United States',
     imageUrl:
-      'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&q=80',
+      'https://images.unsplash.com/photo-1496588152823-86ff7695e68f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxOZXclMjBZb3JrJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzIxfDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -37,8 +50,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     location: 'Buenos Aires · Argentina',
     date: '2026-06-13',
     difficulty: 'Open',
+    region: 'South America',
+    country: 'Argentina',
     imageUrl:
-      'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=800&q=80',
+      'https://images.unsplash.com/photo-1611865422861-391cf5f3ba49?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxCdWVub3MlMjBBaXJlcyUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjMzMHww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -49,8 +64,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-06-18',
     endDate: '2026-06-21',
     difficulty: 'Pro',
+    region: 'Europe',
+    country: 'Sweden',
     imageUrl:
-      'https://images.unsplash.com/photo-1509356843151-3e7d96241e11?w=800&q=80',
+      'https://images.unsplash.com/photo-1564924304464-8cee6c450e7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxTdG9ja2hvbG0lMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzMzJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -61,8 +78,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-06-27',
     endDate: '2026-06-28',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'Indonesia',
     imageUrl:
-      'https://images.unsplash.com/photo-1555899434-94d1368aa7af?w=800&q=80',
+      'https://images.unsplash.com/photo-1718729362445-51d2da1ee7a7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxKYWthcnRhJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzM1fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -73,8 +92,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-07-01',
     endDate: '2026-07-05',
     difficulty: 'Open',
+    region: 'Australia',
+    country: 'Australia',
     imageUrl:
-      'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=800&q=80',
+      'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxTeWRuZXklMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzMzZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -85,8 +106,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-07-04',
     endDate: '2026-07-05',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'China',
     imageUrl:
-      'https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?w=800&q=80',
+      'https://images.unsplash.com/photo-1597618585562-7cc2ceec795e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxIYW5nemhvdSUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjMzN3ww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -97,8 +120,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-07-24',
     endDate: '2026-07-26',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'India',
     imageUrl:
-      'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=80',
+      'https://images.unsplash.com/photo-1599230080795-a48439229cb7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxEZWxoaSUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjMzOXww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -109,8 +134,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-08-01',
     endDate: '2026-08-02',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'China',
     imageUrl:
-      'https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?w=800&q=80',
+      'https://images.unsplash.com/photo-1692464487305-30b52cddac4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxDaGVuZ2R1JTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzQxfDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -121,8 +148,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-08-01',
     endDate: '2026-08-02',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Turkey',
     imageUrl:
-      'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&q=80',
+      'https://images.unsplash.com/photo-1696711551721-458511adcd86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxJc3RhbmJ1bCUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM0M3ww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -133,8 +162,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-08-06',
     endDate: '2026-08-09',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'Japan',
     imageUrl:
-      'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80',
+      'https://images.unsplash.com/photo-1775739778487-6a01c27e8ab1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxDaGliYSUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM0NHww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -145,8 +176,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-08-13',
     endDate: '2026-08-16',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'Thailand',
     imageUrl:
-      'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=800&q=80',
+      'https://images.unsplash.com/photo-1563492065599-3520f775eeed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxCYW5na29rJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzQ2fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -157,8 +190,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-08-14',
     endDate: '2026-08-15',
     difficulty: 'Open',
+    region: 'Africa',
+    country: 'South Africa',
     imageUrl:
-      'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=800&q=80',
+      'https://images.unsplash.com/photo-1639983220402-d8539e8d50a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxDYXBlJTIwVG93biUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM0N3ww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -169,8 +204,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-08-15',
     endDate: '2026-08-16',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'China',
     imageUrl:
-      'https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?w=800&q=80',
+      'https://images.unsplash.com/photo-1522614288668-a697127e9b21?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxTaGVuemhlbiUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM0OXww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -181,8 +218,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-08-21',
     endDate: '2026-08-23',
     difficulty: 'Open',
+    region: 'Australia',
+    country: 'Australia',
     imageUrl:
-      'https://images.unsplash.com/photo-1524293581917-878a6d017c71?w=800&q=80',
+      'https://images.unsplash.com/photo-1596826063323-9a60b8d11e72?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxQZXJ0aCUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM1MHww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -193,8 +232,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-03',
     endDate: '2026-09-07',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'United States',
     imageUrl:
-      'https://images.unsplash.com/photo-1501466044931-62695aada8e9?w=800&q=80',
+      'https://images.unsplash.com/photo-1617581629397-a72507c3de9e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxXYXNoaW5ndG9uJTIwREMlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzNTJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -205,8 +246,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-04',
     endDate: '2026-09-06',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Spain',
     imageUrl:
-      'https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=800&q=80',
+      'https://images.unsplash.com/photo-1780554755963-6b2ef52568e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxUZW5lcmlmZSUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM1M3ww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -217,8 +260,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-05',
     endDate: '2026-09-06',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'Mexico',
     imageUrl:
-      'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?w=800&q=80',
+      'https://images.unsplash.com/photo-1598363460575-485fb6bea99a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxBY2FwdWxjb3xlbnwwfDB8fHwxNzgwOTUyMzU3fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -229,8 +274,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-05',
     endDate: '2026-09-06',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Greece',
     imageUrl:
-      'https://images.unsplash.com/photo-1555993539-1732b0258235?w=800&q=80',
+      'https://images.unsplash.com/photo-1622616235693-d9c1de2bf0cd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxBdGhlbnMlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzNTh8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -241,8 +288,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-12',
     endDate: '2026-09-13',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'China',
     imageUrl:
-      'https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?w=800&q=80',
+      'https://images.unsplash.com/photo-1708660367433-01261c964b8d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxCZWlqaW5nJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzYwfDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -253,8 +302,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-17',
     endDate: '2026-09-20',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Netherlands',
     imageUrl:
-      'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=800&q=80',
+      'https://images.unsplash.com/flagged/photo-1560942152-b957cc9061e6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxNYWFzdHJpY2h0JTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzYyfDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -265,8 +316,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-17',
     endDate: '2026-09-20',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'India',
     imageUrl:
-      'https://images.unsplash.com/photo-1529253355930-ddbe423a2ac7?w=800&q=80',
+      'https://images.unsplash.com/photo-1666843527155-14ec5f016802?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxNdW1iYWklMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzNjN8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -277,8 +330,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-18',
     endDate: '2026-09-20',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'United States',
     imageUrl:
-      'https://images.unsplash.com/photo-1572204097183-e1ab140342ed?w=800&q=80',
+      'https://images.unsplash.com/photo-1621603933126-6c216db10045?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxTYWx0JTIwTGFrZSUyMENpdHklMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzNjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -289,8 +344,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-19',
     endDate: '2026-09-20',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Turkey',
     imageUrl:
-      'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&q=80',
+      'https://images.unsplash.com/photo-1719688550968-a4b11141f279?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxJem1pciUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM2Nnww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -301,8 +358,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-24',
     endDate: '2026-09-27',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Italy',
     imageUrl:
-      'https://images.unsplash.com/photo-1555993539-1732b0258235?w=800&q=80',
+      'https://images.unsplash.com/photo-1752886355870-17e8ebe79a05?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxSb21lJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzY4fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -313,8 +372,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-25',
     endDate: '2026-09-27',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Norway',
     imageUrl:
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+      'https://images.unsplash.com/photo-1433757741270-94a3bcadc2f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxPc2xvJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzY5fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -325,8 +386,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-09-30',
     endDate: '2026-10-04',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'France',
     imageUrl:
-      'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&q=80',
+      'https://images.unsplash.com/photo-1493564738392-d148cfbd6eda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxCb3JkZWF1eHxlbnwwfDB8fHwxNzgwOTUyMzczfDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -337,8 +400,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-01',
     endDate: '2026-10-04',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Germany',
     imageUrl:
-      'https://images.unsplash.com/photo-1560969184-10fe8719e047?w=800&q=80',
+      'https://images.unsplash.com/photo-1562663863-07371070c4b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxLYXJsc3J1aGUlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzNzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -349,8 +414,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-01',
     endDate: '2026-10-04',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'Canada',
     imageUrl:
-      'https://images.unsplash.com/photo-1517090504586-fde19ea6066f?w=800&q=80',
+      'https://images.unsplash.com/photo-1507992781348-310259076fe0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxUb3JvbnRvJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzc2fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -361,8 +428,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-08',
     endDate: '2026-10-11',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'United States',
     imageUrl:
-      'https://images.unsplash.com/photo-1501979376754-f8b7b3f5b1a4?w=800&q=80',
+      'https://images.unsplash.com/photo-1565127803082-69dd82351360?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxCb3N0b24lMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzNzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -373,8 +442,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-09',
     endDate: '2026-10-11',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Switzerland',
     imageUrl:
-      'https://images.unsplash.com/photo-1509356843151-3e7d96241e11?w=800&q=80',
+      'https://images.unsplash.com/photo-1776172899340-6fa259e512b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxHZW5ldmElMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzNzl8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -385,8 +456,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-10',
     endDate: '2026-10-11',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Poland',
     imageUrl:
-      'https://images.unsplash.com/photo-1519197924294-4ba991a11128?w=800&q=80',
+      'https://images.unsplash.com/photo-1661414429784-6558d0b40337?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxHZGFuc2slMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzODB8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -397,8 +470,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-16',
     endDate: '2026-10-18',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Spain',
     imageUrl:
-      'https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?w=800&q=80',
+      'https://images.unsplash.com/photo-1652806093887-66f5b9ddb49a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxWYWxlbmNpYSUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM4Mnww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -408,8 +483,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     location: 'São Paulo · Brazil',
     date: '2026-10-17',
     difficulty: 'Open',
+    region: 'South America',
+    country: 'Brazil',
     imageUrl:
-      'https://images.unsplash.com/photo-1543059080-f9b1272213d5?w=800&q=80',
+      'https://images.unsplash.com/photo-1554168848-228452c09d60?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxTJUMzJUEzbyUyMFBhdWxvJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzgzfDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -420,8 +497,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-23',
     endDate: '2026-10-25',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'United States',
     imageUrl:
-      'https://images.unsplash.com/photo-1605723517503-3cadb5818a0c?w=800&q=80',
+      'https://images.unsplash.com/photo-1561063139-e183e66909c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxUYW1wYSUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM4NXww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -432,8 +511,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-27',
     endDate: '2026-11-01',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'United Kingdom',
     imageUrl:
-      'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80',
+      'https://images.unsplash.com/photo-1499958060387-dbdb8d0994fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxCaXJtaW5naGFtJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzg3fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -444,8 +525,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-28',
     endDate: '2026-11-01',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Germany',
     imageUrl:
-      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80',
+      'https://images.unsplash.com/photo-1594652791095-3a5655f0d756?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxIYW1idXJnJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzg4fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -456,8 +539,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-29',
     endDate: '2026-11-01',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'France',
     imageUrl:
-      'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&q=80',
+      'https://images.unsplash.com/photo-1578163679681-63f9c49a2c64?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxOaWNlJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzkwfDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -468,8 +553,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-30',
     endDate: '2026-11-01',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'Mexico',
     imageUrl:
-      'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?w=800&q=80',
+      'https://images.unsplash.com/photo-1717388835452-c9c8cda0002e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxNZXhpY28lMjBDaXR5JTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyMzkxfDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -480,8 +567,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-10-31',
     endDate: '2026-11-01',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'China',
     imageUrl:
-      'https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?w=800&q=80',
+      'https://images.unsplash.com/photo-1538428494232-9c0d8a3ab403?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxTaGFuZ2hhaSUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjM5M3ww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -492,8 +581,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-11',
     endDate: '2026-11-15',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Ireland',
     imageUrl:
-      'https://images.unsplash.com/photo-1549918864-48ac978761a4?w=800&q=80',
+      'https://images.unsplash.com/photo-1692461939118-6610e751d608?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxEdWJsaW4lMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzOTR8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -504,8 +595,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-11',
     endDate: '2026-11-15',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Germany',
     imageUrl:
-      'https://images.unsplash.com/photo-1560969184-10fe8719e047?w=800&q=80',
+      'https://images.unsplash.com/photo-1691765471876-e9ec65d52293?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxEJUMzJUJDc3NlbGRvcmYlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzOTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -516,8 +609,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-12',
     endDate: '2026-11-15',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Spain',
     imageUrl:
-      'https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?w=800&q=80',
+      'https://images.unsplash.com/photo-1583422409516-2895a77efded?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxCYXJjZWxvbmElMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzOTh8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -528,8 +623,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-12',
     endDate: '2026-11-15',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'United States',
     imageUrl:
-      'https://images.unsplash.com/photo-1546156929-a4c0ac411f47?w=800&q=80',
+      'https://images.unsplash.com/photo-1709689702529-6fa1f343e108?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxEZW52ZXIlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTIzOTl8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -540,8 +637,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-14',
     endDate: '2026-11-15',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'South Korea',
     imageUrl:
-      'https://images.unsplash.com/photo-1538485399081-7191377e8241?w=800&q=80',
+      'https://images.unsplash.com/photo-1532649097480-b67d52743b69?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxTZW91bCUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjQwMHww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -552,8 +651,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-18',
     endDate: '2026-11-22',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'United States',
     imageUrl:
-      'https://images.unsplash.com/photo-1545194445-dddb8f4487c6?w=800&q=80',
+      'https://images.unsplash.com/photo-1621904878414-d4ca4756bd7e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxEYWxsYXMlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -564,8 +665,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-20',
     endDate: '2026-11-22',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Poland',
     imageUrl:
-      'https://images.unsplash.com/photo-1519197924294-4ba991a11128?w=800&q=80',
+      'https://images.unsplash.com/photo-1736876509578-9100b97f1e15?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxQb3puYW4lMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0MDR8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -576,8 +679,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-21',
     endDate: '2026-11-22',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'China',
     imageUrl:
-      'https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?w=800&q=80',
+      'https://images.unsplash.com/photo-1583996829982-823143cc975a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxHdWFuZ3pob3UlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0MDV8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -587,8 +692,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     location: 'Rio de Janeiro · Brazil',
     date: '2026-11-21',
     difficulty: 'Open',
+    region: 'South America',
+    country: 'Brazil',
     imageUrl:
-      'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=800&q=80',
+      'https://images.unsplash.com/photo-1516306580123-e6e52b1b7b5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxSaW8lMjBkZSUyMEphbmVpcm8lMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0MDd8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -599,8 +706,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-26',
     endDate: '2026-11-30',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Netherlands',
     imageUrl:
-      'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=800&q=80',
+      'https://images.unsplash.com/photo-1548368698-c656954f39c6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxVdHJlY2h0JTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyNDA5fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -611,8 +720,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-27',
     endDate: '2026-11-29',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'Singapore',
     imageUrl:
-      'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=800&q=80',
+      'https://images.unsplash.com/flagged/photo-1562503542-2a1e6f03b16b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxTaW5nYXBvcmUlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0MTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -623,8 +734,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-11-28',
     endDate: '2026-11-29',
     difficulty: 'Open',
+    region: 'Africa',
+    country: 'South Africa',
     imageUrl:
-      'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=800&q=80',
+      'https://images.unsplash.com/photo-1636706519609-988babca3dd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxKb2hhbm5lc2J1cmclMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0MTJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -635,8 +748,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-02',
     endDate: '2026-12-06',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'United Kingdom',
     imageUrl:
-      'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80',
+      'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxMb25kb24lMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0MTN8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -647,8 +762,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-04',
     endDate: '2026-12-06',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'United States',
     imageUrl:
-      'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=800&q=80',
+      'https://images.unsplash.com/photo-1739492375856-b857c23cdd5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxBbmFoZWltJTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyNDE1fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -659,8 +776,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-05',
     endDate: '2026-12-06',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Italy',
     imageUrl:
-      'https://images.unsplash.com/photo-1513581166391-887a96ddeafd?w=800&q=80',
+      'https://images.unsplash.com/photo-1578731397127-52e569dcb46d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxNaWxhbiUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjQxNnww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -671,8 +790,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-05',
     endDate: '2026-12-06',
     difficulty: 'Open',
+    region: 'Asia',
+    country: 'China',
     imageUrl:
-      'https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?w=800&q=80',
+      'https://images.unsplash.com/photo-1634317343250-05844895e2d1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxTYW55YSUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjQxOHww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -683,8 +804,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-10',
     endDate: '2026-12-13',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Germany',
     imageUrl:
-      'https://images.unsplash.com/photo-1560969184-10fe8719e047?w=800&q=80',
+      'https://images.unsplash.com/photo-1626447637943-4c9d412fa8cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxGcmFua2Z1cnQlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0MjB8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -695,8 +818,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-10',
     endDate: '2026-12-13',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'United States',
     imageUrl:
-      'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800&q=80',
+      'https://images.unsplash.com/photo-1556033681-83abea291a96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxOYXNodmlsbGUlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0MjF8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -707,8 +832,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-12',
     endDate: '2026-12-20',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'France',
     imageUrl:
-      'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&q=80',
+      'https://images.unsplash.com/photo-1550340499-a6c60fc8287c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxQYXJpcyUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjQyMnww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -719,8 +846,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-17',
     endDate: '2026-12-20',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Belgium',
     imageUrl:
-      'https://images.unsplash.com/photo-1559113202-c916b8e44373?w=800&q=80',
+      'https://images.unsplash.com/photo-1609012200624-f7fa9ba45dbc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxHZW50JTIwc2t5bGluZXxlbnwwfDB8fHwxNzgwOTUyNDI0fDA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -731,8 +860,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-18',
     endDate: '2026-12-20',
     difficulty: 'Open',
+    region: 'Europe',
+    country: 'Finland',
     imageUrl:
-      'https://images.unsplash.com/photo-1509356843151-3e7d96241e11?w=800&q=80',
+      'https://images.unsplash.com/photo-1683119167031-19bf5bd185de?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxIZWxzaW5raSUyMHNreWxpbmV8ZW58MHwwfHx8MTc4MDk1MjQyNXww&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
   {
@@ -743,8 +874,10 @@ export const HYROX_RACE_EVENTS: HyroxRaceEvent[] = [
     date: '2026-12-18',
     endDate: '2026-12-20',
     difficulty: 'Open',
+    region: 'North America',
+    country: 'Canada',
     imageUrl:
-      'https://images.unsplash.com/photo-1517090504586-fde19ea6066f?w=800&q=80',
+      'https://images.unsplash.com/photo-1559511260-66a654ae982a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w5NzI2NTJ8MHwxfHNlYXJjaHwxfHxWYW5jb3V2ZXIlMjBza3lsaW5lfGVufDB8MHx8fDE3ODA5NTI0Mjd8MA&ixlib=rb-4.1.0&q=80&w=1080',
     gradient: DEFAULT_GRADIENT,
   },
 ];

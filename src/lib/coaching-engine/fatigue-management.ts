@@ -1,6 +1,5 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 
-import { isPerformanceTrainingGoal } from '@/lib/performance-training';
 import type { OnboardingProfile, WorkoutType, Weakness } from '@/types';
 import type { WorkoutCategory } from '@/types/workout';
 
@@ -251,11 +250,11 @@ function fatigueReplacementOptions(
 
   const options: FatigueReplacement[] = [];
 
-  if (preferUpperFirst && !isPerformanceTrainingGoal(profile.goal)) {
+  if (preferUpperFirst) {
     options.push(upperStrength);
   }
   options.push(easyRun);
-  if (!preferUpperFirst && !isPerformanceTrainingGoal(profile.goal)) {
+  if (!preferUpperFirst) {
     options.push(upperStrength);
   }
 
@@ -312,68 +311,13 @@ export function resolveFatigueSafeSessionForDate(
   history: FatigueHistoryEntry[],
   sessionDate: string
 ): FatigueSafeSession {
-  let type = plannedType;
-  let context = cloneSlotContext(slotContext);
-  let score = estimateSessionFatigue(type, profile, context);
-  let adjusted = false;
-
-  if (context.forceRaceSim && type === 'race_sim') {
-    return {
-      type,
-      slotContext: { ...context, fatigueAdjusted: false },
-      fatigueScore: score,
-      fatigueAdjusted: false,
-    };
-  }
-
-  const consecutiveLowerRisk =
-    isPlannedLowerBodyDominant(type, profile, context) &&
-    shouldProtectFromConsecutiveLowerLoad(history);
-
-  if (consecutiveLowerRisk) {
-    const swapped = tryFatigueReplacements(
-      profile,
-      slotContext,
-      history,
-      sessionDate,
-      true
-    );
-    if (swapped) {
-      return swapped;
-    }
-    return easyRunFallback(profile, true, slotContext);
-  }
-
-  if (!wouldExceedFatigueWindow(history, sessionDate, score)) {
-    return {
-      type,
-      slotContext: { ...context, fatigueAdjusted: adjusted },
-      fatigueScore: score,
-      fatigueAdjusted: adjusted,
-    };
-  }
-
-  if (!isHighFatigueType(score)) {
-    return {
-      type,
-      slotContext: { ...context, fatigueAdjusted: false },
-      fatigueScore: score,
-      fatigueAdjusted: false,
-    };
-  }
-
-  const windowSwap = tryFatigueReplacements(
-    profile,
-    slotContext,
-    history,
-    sessionDate,
-    false
-  );
-  if (windowSwap) {
-    return windowSwap;
-  }
-
-  return easyRunFallback(profile, false, slotContext);
+  const score = estimateSessionFatigue(plannedType, profile, slotContext);
+  return {
+    type: plannedType,
+    slotContext: { ...slotContext, fatigueAdjusted: false },
+    fatigueScore: score,
+    fatigueAdjusted: false,
+  };
 }
 
 export function buildFatigueHistoryEntry(

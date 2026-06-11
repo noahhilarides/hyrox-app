@@ -1,23 +1,54 @@
 import type { RecoveryPrescription } from '@/constants/coaching-philosophy';
 import { RECOVERY_BY_DAYS_PER_WEEK } from '@/constants/coaching-philosophy';
-import { isPerformanceTrainingGoal } from '@/lib/performance-training';
+import { PEAK_PHASE_MAX_WEEKS, TAPER_PHASE_MAX_WEEKS } from '@/constants/plan-generation';
 import { isAdvancedAthlete, isBeginnerAthlete } from '@/lib/profile-levels';
-import type { OnboardingProfile, WorkoutType } from '@/types';
+import type { FitnessLevel, OnboardingProfile, WorkoutType } from '@/types';
 
 export type WeekPhase = 'base' | 'build' | 'peak' | 'taper';
+
+/** Phase split as fraction of base+build (peak/taper are capped separately). */
+const PHASE_SPLIT: Record<FitnessLevel, { base: number; build: number }> = {
+  beginner: { base: 0.62, build: 0.38 },     // more aerobic + movement foundation
+  intermediate: { base: 0.47, build: 0.53 }, // balanced
+  advanced: { base: 0.38, build: 0.62 },     // already has base, more intensity
+};
 
 /**
  * Mesocycle phase for a plan week (0-based weekIndex).
  *
- * 12-week reference: weeks 1–3 base, 4–7 build, 8–10 peak, 11–12 taper.
- * Other lengths use the same proportions (3/12, 7/12, 10/12 of total weeks).
+ * Peak and taper are capped windows at the end of the plan; the remaining
+ * weeks split between base and build by fitness level. Extra weeks on long
+ * plans bank into base (beginners) or build (advanced).
  */
-export function weekPhase(weekIndex: number, totalWeeks: number): WeekPhase {
-  const weekNumber = weekIndex + 1;
+export function weekPhase(
+  weekIndex: number,
+  totalWeeks: number,
+  level: FitnessLevel = 'intermediate',
+  mode: 'race' | 'rolling' = 'race'
+): WeekPhase {
   const weeks = Math.max(1, totalWeeks);
-  const baseEnd = Math.max(1, Math.round((3 / 12) * weeks));
-  const buildEnd = Math.max(baseEnd, Math.round((7 / 12) * weeks));
-  const peakEnd = Math.max(buildEnd, Math.round((10 / 12) * weeks));
+  const weekNumber = weekIndex + 1;
+
+  if (mode === 'rolling') {
+    // No race date: sustainable training. Short base to start, then stay in build.
+    const split = PHASE_SPLIT[level];
+    const baseWeeks = Math.max(1, Math.round(weeks * split.base * 0.5));
+    return weekNumber <= baseWeeks ? 'base' : 'build';
+  }
+
+  // Peak and taper are capped windows at the end of the plan
+  const taperWeeks = Math.min(TAPER_PHASE_MAX_WEEKS, Math.max(1, Math.round(weeks * 0.08)));
+  const peakWeeks = Math.min(PEAK_PHASE_MAX_WEEKS, Math.max(1, Math.round(weeks * 0.18)));
+
+  // Remaining weeks split between base and build by fitness level
+  const remaining = Math.max(2, weeks - taperWeeks - peakWeeks);
+  const split = PHASE_SPLIT[level];
+  const baseWeeks = Math.max(1, Math.round(remaining * split.base));
+  const buildWeeks = Math.max(1, remaining - baseWeeks);
+
+  const baseEnd = baseWeeks;
+  const buildEnd = baseEnd + buildWeeks;
+  const peakEnd = buildEnd + peakWeeks;
 
   if (weekNumber <= baseEnd) return 'base';
   if (weekNumber <= buildEnd) return 'build';

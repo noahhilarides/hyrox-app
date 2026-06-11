@@ -7,77 +7,56 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { ContinueButton } from '@/components/onboarding/continue-button';
 import { OnboardingContainer } from '@/components/onboarding/onboarding-container';
 import { OnboardingScreenIntro } from '@/components/onboarding/onboarding-screen-intro';
-import { OnboardingSection } from '@/components/onboarding/onboarding-section';
 import { RaceEventCard } from '@/components/onboarding/race-event-card';
 import { SelectionChip } from '@/components/onboarding/selection-chip';
 import { AppText } from '@/components/ui/text';
 import { HYROX_RACE_EVENTS, type HyroxRaceEvent } from '@/data/onboarding/races';
 import { onboardingSpacing, onboardingTheme } from '@/data/onboarding/theme';
 import { isRaceUpcoming } from '@/lib/race-countdown';
-import { formatHyroxFinishTime, parseHyroxFinishTime } from '@/lib/hyrox-race-time';
 import { useOnboardingNavigation } from '@/hooks/use-onboarding-navigation';
 import { useOnboardingStore } from '@/store/onboarding-store';
 
 type RaceRegionFilter =
   | 'all'
+  | 'united_states'
   | 'north_america'
   | 'europe'
-  | 'asia_pacific'
+  | 'asia'
+  | 'south_america'
+  | 'australia'
+  | 'africa'
   | 'middle_east';
 
 const REGION_OPTIONS: { id: RaceRegionFilter; label: string }[] = [
   { id: 'all', label: 'All' },
+  { id: 'united_states', label: 'United States' },
   { id: 'north_america', label: 'North America' },
   { id: 'europe', label: 'Europe' },
-  { id: 'asia_pacific', label: 'Asia Pacific' },
+  { id: 'asia', label: 'Asia' },
+  { id: 'south_america', label: 'South America' },
+  { id: 'australia', label: 'Australia' },
+  { id: 'africa', label: 'Africa' },
   { id: 'middle_east', label: 'Middle East' },
 ];
 
-const US_STATE_PATTERN =
-  /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b/;
-
-function inferRaceRegion(event: HyroxRaceEvent): Exclude<RaceRegionFilter, 'all'> {
-  const haystack = `${event.city} ${event.location} ${event.name}`.toLowerCase();
-
-  if (
-    /dubai|abu dhabi|qatar|bahrain|saudi|riyadh|kuwait|israel|tel aviv|oman|jeddah|doha|uae/.test(
-      haystack
-    )
-  ) {
-    return 'middle_east';
-  }
-
-  if (
-    /australia|sydney|melbourne|brisbane|perth|singapore|hong kong|tokyo|osaka|seoul|bangkok|malaysia|kuala|new zealand|auckland|wellington|shanghai|beijing|taipei|manila|jakarta|indonesia|india|mumbai|delhi|hangzhou|chengdu|shenzhen|guangzhou|sanya|chiba|philippines|vietnam|taiwan|korea|japan|china|thailand/.test(
-      haystack
-    )
-  ) {
-    return 'asia_pacific';
-  }
-
-  if (
-    /united kingdom|\buk\b|london|manchester|birmingham|paris|berlin|amsterdam|barcelona|madrid|rome|milan|vienna|zurich|stockholm|copenhagen|dublin|brussels|munich|hamburg|frankfurt|lyon|nice|warsaw|prague|lisbon|porto|oslo|helsinki|gent|athens|greece|istanbul|izmir|turkey|tenerife|maastricht|utrecht|gdansk|poznan|valencia|geneva|switzerland|karlsruhe|bordeaux|dusseldorf|norway|finland|belgium|netherlands|europe|germany|france|spain|italy|denmark|poland|portugal|scotland|england/.test(
-      haystack
-    )
-  ) {
-    return 'europe';
-  }
-
-  if (
-    US_STATE_PATTERN.test(event.location) ||
-    /usa|u\.s\.|united states|canada|toronto|vancouver|montreal|calgary|mexico|cdmx|guadalajara/.test(
-      haystack
-    )
-  ) {
-    return 'north_america';
-  }
-
-  return 'north_america';
+function raceMatchesRegionFilter(event: HyroxRaceEvent, filter: RaceRegionFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'united_states') return event.country === 'United States';
+  const map: Record<string, string> = {
+    north_america: 'North America',
+    europe: 'Europe',
+    asia: 'Asia',
+    south_america: 'South America',
+    australia: 'Australia',
+    africa: 'Africa',
+    middle_east: 'Middle East',
+  };
+  return event.region === map[filter];
 }
 
 function raceSearchHaystack(event: HyroxRaceEvent): string {
@@ -101,25 +80,27 @@ export default function RaceScreen() {
   const setRace = useOnboardingStore((s) => s.setRace);
   const [searchQuery, setSearchQuery] = useState('');
   const [regionFilter, setRegionFilter] = useState<RaceRegionFilter>('all');
-  const [timeInput, setTimeInput] = useState(() =>
-    race.previousTimeSeconds != null
-      ? formatHyroxFinishTime(race.previousTimeSeconds)
-      : ''
-  );
-
-  const parsedTime = useMemo(() => parseHyroxFinishTime(timeInput), [timeInput]);
-  const timeError =
-    race.hasRacedBefore === true && timeInput.trim().length > 0 && parsedTime == null;
 
   const sortedRaces = useMemo(
     () => sortRacesByDate(filterUpcomingRaces(HYROX_RACE_EVENTS)),
     []
   );
 
+  const visibleRegionOptions = useMemo(
+    () =>
+      REGION_OPTIONS.filter(
+        (option) =>
+          option.id === 'all' ||
+          option.id === 'united_states' ||
+          sortedRaces.some((event) => raceMatchesRegionFilter(event, option.id))
+      ),
+    [sortedRaces]
+  );
+
   const filteredRaces = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return sortedRaces.filter((event) => {
-      if (regionFilter !== 'all' && inferRaceRegion(event) !== regionFilter) {
+      if (regionFilter !== 'all' && !raceMatchesRegionFilter(event, regionFilter)) {
         return false;
       }
       if (!q) return true;
@@ -137,25 +118,7 @@ export default function RaceScreen() {
     });
   };
 
-  const setHasRacedBefore = (hasRacedBefore: boolean) => {
-    if (!hasRacedBefore) {
-      setTimeInput('');
-      setRace({ hasRacedBefore, previousTimeSeconds: null });
-      return;
-    }
-    setRace({ hasRacedBefore });
-  };
-
-  const handleTimeChange = (text: string) => {
-    setTimeInput(text);
-    const seconds = parseHyroxFinishTime(text);
-    setRace({ previousTimeSeconds: seconds });
-  };
-
-  const isComplete =
-    race.eventId != null &&
-    race.hasRacedBefore != null &&
-    (race.hasRacedBefore === false || parsedTime != null);
+  const isComplete = race.eventId != null;
 
   const listHeader = (
     <>
@@ -184,7 +147,7 @@ export default function RaceScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.regionRow}
         style={styles.regionScroll}>
-        {REGION_OPTIONS.map((option) => (
+        {visibleRegionOptions.map((option) => (
           <SelectionChip
             key={option.id}
             label={option.label}
@@ -209,56 +172,6 @@ export default function RaceScreen() {
 
   const listFooter = (
     <>
-      <Animated.View entering={FadeInDown.delay(120).duration(400)}>
-        <OnboardingSection
-          title="HYROX experience"
-          subtitle="This helps us set realistic pacing targets for your plan.">
-          <View style={styles.chipRow}>
-            <SelectionChip
-              label="Yes, I've raced"
-              selected={race.hasRacedBefore === true}
-              onPress={() => setHasRacedBefore(true)}
-              style={styles.chip}
-            />
-            <SelectionChip
-              label="No, first race"
-              selected={race.hasRacedBefore === false}
-              onPress={() => setHasRacedBefore(false)}
-              style={styles.chip}
-            />
-          </View>
-
-          {race.hasRacedBefore === true ? (
-            <View style={styles.timeBlock}>
-              <AppText style={styles.timeLabel}>Previous finish time</AppText>
-              <TextInput
-                value={timeInput}
-                onChangeText={handleTimeChange}
-                placeholder="e.g. 1:24:30 or 84:30"
-                placeholderTextColor={onboardingTheme.textSubtle}
-                style={[styles.timeInput, timeError && styles.timeInputError]}
-                keyboardType="numbers-and-punctuation"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              {timeError ? (
-                <AppText style={styles.timeError}>
-                  Use H:MM:SS, MM:SS, or total minutes (e.g. 90)
-                </AppText>
-              ) : parsedTime != null ? (
-                <AppText style={styles.timeOk}>
-                  Recorded as {formatHyroxFinishTime(parsedTime)}
-                </AppText>
-              ) : (
-                <AppText style={styles.timeHint}>
-                  Open, doubles, or pro — your most recent full race time
-                </AppText>
-              )}
-            </View>
-          ) : null}
-        </OnboardingSection>
-      </Animated.View>
-
       <View style={styles.hintRow}>
         <AppText style={styles.hint}>
           {race.name ? `Selected · ${race.name}` : 'Tap a race to select your event'}
@@ -350,53 +263,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: onboardingTheme.textSubtle,
     textAlign: 'center',
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: onboardingSpacing.sm,
-    marginBottom: onboardingSpacing.md,
-  },
-  chip: {
-    flexGrow: 1,
-    minWidth: '45%',
-  },
-  timeBlock: {
-    gap: onboardingSpacing.sm,
-  },
-  timeLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: onboardingTheme.text,
-  },
-  timeInput: {
-    backgroundColor: onboardingTheme.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: onboardingTheme.borderSoft,
-    paddingHorizontal: onboardingSpacing.md,
-    paddingVertical: onboardingSpacing.sm + 4,
-    fontSize: 18,
-    fontWeight: '600',
-    color: onboardingTheme.text,
-    fontVariant: ['tabular-nums'],
-  },
-  timeInputError: {
-    borderColor: onboardingTheme.danger,
-  },
-  timeHint: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: onboardingTheme.textSubtle,
-  },
-  timeOk: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: onboardingTheme.accent,
-  },
-  timeError: {
-    fontSize: 13,
-    color: onboardingTheme.danger,
   },
   hintRow: {
     paddingTop: onboardingSpacing.sm,

@@ -1,7 +1,5 @@
-import type { PerformanceSessionKind } from '@/constants/performance-training';
 import { beginnerRunnerRunVariant } from '@/lib/coaching-engine/beginner-runner-protection';
 import { isBeginnerRunner } from '@/lib/profile-levels';
-import { isPerformanceTrainingGoal } from '@/lib/performance-training';
 import type { WeekPhase } from '@/lib/recovery-prescription';
 import type { OnboardingProfile, WorkoutType, Weakness } from '@/types';
 import type { WorkoutCategory } from '@/types/workout';
@@ -20,7 +18,6 @@ export interface SlotResolveContext {
   strengthIndex: number;
   /** Plan week index — beginner run caps and variant guards. */
   weekIndex?: number;
-  performanceKind?: PerformanceSessionKind;
   /** Rotated weakness target for this session (limits scoring + variant). */
   targetWeakness?: Weakness;
   /** Set when fatigue management swapped this session to a lighter option. */
@@ -35,29 +32,11 @@ export interface ResolvedSlot {
   workoutType: WorkoutType;
 }
 
-const PERFORMANCE_KIND_MAP: Record<PerformanceSessionKind, ResolvedSlot> = {
-  upper_strength: { category: 'strength_upper', variant: 'performance', workoutType: 'strength' },
-  lower_strength: { category: 'strength_lower', variant: 'performance', workoutType: 'strength' },
-  full_body_strength: {
-    category: 'full_body_strength',
-    variant: 'performance',
-    workoutType: 'strength',
-  },
-  easy_run: { category: 'running', variant: 'easy', workoutType: 'run' },
-  long_aerobic: { category: 'running', variant: 'long', workoutType: 'run' },
-  speed_work: { category: 'running', variant: 'speed', workoutType: 'speed' },
-  conditioning: { category: 'conditioning', variant: 'performance', workoutType: 'conditioning' },
-};
-
 export function resolveSlot(
   workoutType: WorkoutType,
   profile: OnboardingProfile,
   ctx: SlotResolveContext
 ): ResolvedSlot {
-  if (ctx.performanceKind) {
-    return PERFORMANCE_KIND_MAP[ctx.performanceKind];
-  }
-
   if (workoutType === 'recovery') {
     return { category: 'recovery', workoutType: 'recovery' };
   }
@@ -139,9 +118,6 @@ export function resolveSlot(
   }
 
   if (workoutType === 'strength') {
-    if (isPerformanceTrainingGoal(profile.goal)) {
-      return { category: 'strength_lower', variant: 'performance', workoutType: 'strength' };
-    }
     const upper = strengthSlotIsUpper(ctx) || ctx.forceUpperStrength === true;
     if (ctx.phase === 'taper' && !ctx.forceUpperStrength) {
       return { category: 'strength_lower', variant: 'maintenance', workoutType: 'strength' };

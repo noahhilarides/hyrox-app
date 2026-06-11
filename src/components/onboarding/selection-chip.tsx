@@ -44,8 +44,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   chipCompact: {
-    minWidth: 44,
-    paddingHorizontal: onboardingSpacing.sm + 2,
+    minWidth: 52,
+    paddingHorizontal: onboardingSpacing.sm,
     paddingVertical: onboardingSpacing.sm,
   },
   chipSelected: {

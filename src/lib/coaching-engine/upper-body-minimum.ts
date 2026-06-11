@@ -46,7 +46,15 @@ export function applyUpperBodyMinimum(
   lastUpperBodyDate: string | null
 ): { type: WorkoutType; slotContext: SlotResolveContext; upperBodySteered: boolean } {
   if (plannedType === 'strength' && !strengthSlotIsUpper(slotContext)) {
-    return { type: plannedType, slotContext, upperBodySteered: false };
+    const daysSince = daysSinceLastUpperBody(sessionDate, lastUpperBodyDate);
+    if (daysSince < UPPER_BODY_STEER_DAYS) {
+      return { type: plannedType, slotContext, upperBodySteered: false };
+    }
+    return {
+      type: 'strength',
+      slotContext: { ...slotContext, forceUpperStrength: true },
+      upperBodySteered: true,
+    };
   }
 
   if (

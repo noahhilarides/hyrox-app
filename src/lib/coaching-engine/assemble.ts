@@ -2,7 +2,6 @@ import {
   beginnerRunnerMaxDurationMinutes,
   isBeginnerRunner,
 } from '@/lib/coaching-engine/beginner-runner-protection';
-import { isPerformanceTrainingGoal } from '@/lib/performance-training';
 import type { OnboardingProfile, Workout, WorkoutType, Weakness } from '@/types';
 import type { WorkoutTemplate } from '@/types/workout';
 
@@ -69,15 +68,6 @@ function coachNoteFor(
   weekIndex: number,
   weekProgression: WeekProgressionState
 ): string {
-  if (isPerformanceTrainingGoal(profile.goal)) {
-    const days = profile.daysPerWeek;
-    const recoveryHint =
-      days >= 5
-        ? ' Off-day option (not scheduled): walk, mobility, or easy bike.'
-        : '';
-    return `Block week ${(weekIndex % 4) + 1} of 4 — progressive overload across the mesocycle.${recoveryHint}`;
-  }
-
   if (template.category === 'running' && template.variant === 'easy') {
     return isBeginnerRunner(profile)
       ? 'Walk breaks are part of the plan. Consistency beats hero miles.'

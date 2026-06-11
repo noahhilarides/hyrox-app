@@ -42,11 +42,6 @@ export const GOAL_OPTIONS: { value: Goal; label: string; description: string }[]
     label: 'Strength',
     description: 'Get stronger while staying run-fit',
   },
-  {
-    value: 'performance_training',
-    label: 'Performance Training',
-    description: 'Year-round strength, endurance & work capacity',
-  },
 ];
 
 export const FITNESS_OPTIONS: { value: FitnessLevel; label: string; description: string }[] = [

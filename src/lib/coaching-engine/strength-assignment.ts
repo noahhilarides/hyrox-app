@@ -53,7 +53,6 @@ export function isLowerBodyStrengthSlot(
   profile: OnboardingProfile,
   ctx: SlotResolveContext
 ): boolean {
-  if (ctx.performanceKind) return false;
   const resolved = resolveSlot('strength', profile, ctx);
   return resolved.category === 'strength_lower';
 }

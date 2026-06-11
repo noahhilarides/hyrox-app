@@ -73,16 +73,22 @@ describe('beginner runner protection', () => {
     );
   });
 
-  it('week 1 plan has no 60+ min runs for beginner runner', () => {
+  it('week 1 keeps a true-beginner on run/walk and strides (no long continuous run)', () => {
+    // Beginner/5-day routes to the v2 generator, which prescribes run/walk
+    // intervals and strides for a never-run athlete instead of continuous runs.
     const plan = generateTrainingPlan(beginnerProfile());
     const week1Runs = plan.workouts.slice(0, 5).filter((w) => w.type === 'run' || w.type === 'speed');
+    assert.ok(week1Runs.length >= 1, 'expected at least one run/speed session in week 1');
     for (const w of week1Runs) {
+      const runText = w.exercises.map((e) => e.detail).join(' ');
       assert.ok(
-        w.durationMinutes <= 35,
-        `${w.title} (${w.libraryTemplateId}) is ${w.durationMinutes} min`
+        /Run\/Walk|Walk|Strides/i.test(runText),
+        `${w.title} should be run/walk or strides for a true beginner, got: ${runText}`
       );
-      const t = getTemplateById(w.libraryTemplateId!);
-      assert.notEqual(t?.id, 'AER-002');
+      assert.ok(
+        !/\b([6-9]\d|\d{3,})\s*min\b/.test(runText),
+        `${w.title} should not prescribe a 60+ min continuous run, got: ${runText}`
+      );
     }
   });
 });

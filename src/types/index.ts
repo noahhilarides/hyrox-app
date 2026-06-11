@@ -3,8 +3,7 @@ export type Goal =
   | 'hybrid_fitness'
   | 'endurance'
   | 'strength'
-  | 'return_to_fitness'
-  | 'performance_training';
+  | 'return_to_fitness';
 
 export type FitnessLevel = 'beginner' | 'intermediate' | 'advanced';
 

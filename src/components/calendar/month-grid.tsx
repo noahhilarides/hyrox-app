@@ -309,10 +309,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weekdayText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
     color: palette.textSecondary,
     opacity: 0.45,
+    letterSpacing: -0.2,
   },
   weekRow: {
     flexDirection: 'row',

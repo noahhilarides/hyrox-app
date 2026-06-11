@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 
-import { getWorkoutsByCategory } from '@/data/workout-library';
+import { getAllWorkouts, getWorkoutsByCategory } from '@/data/workout-library';
 import {
   PHASE_AVOID_VARIANTS,
   PHASE_PREFERRED_VARIANTS,
@@ -29,6 +29,12 @@ import type { WeekPhase } from '@/lib/recovery-prescription';
 import { strengthLowerVariant } from '@/lib/coaching-engine/slot-resolve';
 import type { OnboardingProfile, FitnessLevel } from '@/types';
 import type { WorkoutCategory, WorkoutDifficulty, WorkoutTemplate } from '@/types/workout';
+
+import {
+  buildRecentStationMap,
+  stationRotationBonus,
+  type HyroxStationType,
+} from './station-rotation';
 
 export const TEMPLATE_REPEAT_WINDOW_DAYS = 14;
 
@@ -154,10 +160,24 @@ function excludeRecentRepeats(
   return filtered.length > 0 ? filtered : candidates;
 }
 
+function simpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) | 0;
+  }
+  return hash;
+}
+
+function seededTiebreak(idA: string, idB: string, sessionDate: string): number {
+  const seed = sessionDate.replace(/-/g, '');
+  const hashA = simpleHash(idA + seed);
+  const hashB = simpleHash(idB + seed);
+  return hashA - hashB;
+}
+
 function buildCandidatePool(
   category: WorkoutCategory,
-  profile: OnboardingProfile,
-  variantHint: string | undefined
+  profile: OnboardingProfile
 ): WorkoutTemplate[] {
   const pool = getWorkoutsByCategory(category);
   if (pool.length === 0) {
@@ -171,13 +191,6 @@ function buildCandidatePool(
     candidates = pool.filter((t) => templateEquipmentMatches(t, profile));
   }
 
-  if (variantHint) {
-    const variantMatch = candidates.filter(
-      (t) => t.variant === variantHint || (!t.variant && variantHint === 'standard')
-    );
-    if (variantMatch.length > 0) candidates = variantMatch;
-  }
-
   return candidates;
 }
 
@@ -185,13 +198,16 @@ function rankCandidates(
   candidates: WorkoutTemplate[],
   profile: OnboardingProfile,
   ctx: TemplateSelectContext,
-  variantHint?: string
+  variantHint?: string,
+  recentStations?: Map<HyroxStationType, number>
 ): WorkoutTemplate[] {
   const beginner = isBeginnerRunner(profile);
   const simBonus = (t: WorkoutTemplate) =>
     variantHint === 'simulation' ? simulationTemplateBonus(t, ctx.weekIndex, ctx.phase) : 0;
   const recoveryBonus = (t: WorkoutTemplate) =>
     t.category === 'recovery' ? recoveryTemplateBonus(t, ctx.weekIndex) : 0;
+  const rotationBonus = (t: WorkoutTemplate) =>
+    recentStations ? stationRotationBonus(t, recentStations) : 0;
 
   return [...candidates].sort((a, b) => {
     const scoreA =
@@ -199,15 +215,17 @@ function rankCandidates(
       variantAlignmentBonus(a, ctx.phase, variantHint) +
       (beginner ? beginnerRunnerSelectionBonus(a, ctx.weekIndex) : 0) +
       simBonus(a) +
-      recoveryBonus(a);
+      recoveryBonus(a) +
+      rotationBonus(a);
     const scoreB =
       scoreWorkout(b, profile, ctx.phase) +
       variantAlignmentBonus(b, ctx.phase, variantHint) +
       (beginner ? beginnerRunnerSelectionBonus(b, ctx.weekIndex) : 0) +
       simBonus(b) +
-      recoveryBonus(b);
+      recoveryBonus(b) +
+      rotationBonus(b);
     if (scoreB !== scoreA) return scoreB - scoreA;
-    return a.id.localeCompare(b.id);
+    return seededTiebreak(a.id, b.id, ctx.sessionDate);
   });
 }
 
@@ -239,7 +257,7 @@ export function selectWorkoutTemplate(
     else variantHint = 'speed';
   }
 
-  let pool = buildCandidatePool(category, profile, variantHint);
+  let pool = buildCandidatePool(category, profile);
   if (category === 'hyrox' && variantHint === 'simulation') {
     const racePrepPool = buildRacePrepSimulationPool(profile);
     if (racePrepPool.length > 0) {
@@ -256,7 +274,11 @@ export function selectWorkoutTemplate(
   }
   const withoutSameWeekday = excludeSameWeekdayRepeats(pool, ctx);
   const withoutRepeats = excludeRecentRepeats(withoutSameWeekday, ctx);
-  const ranked = rankCandidates(withoutRepeats, profile, ctx, variantHint);
+  const recentStations =
+    category === 'hyrox'
+      ? buildRecentStationMap(ctx.recentTemplateUsage, getAllWorkouts(), ctx.sessionDate)
+      : undefined;
+  const ranked = rankCandidates(withoutRepeats, profile, ctx, variantHint, recentStations);
   return ranked[0]!;
 }
 

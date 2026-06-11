@@ -20,7 +20,6 @@ const GOAL_LABELS: Record<string, string> = {
   endurance: 'Endurance',
   strength: 'Strength',
   return_to_fitness: 'Return to fitness',
-  performance_training: 'Performance Training',
 };
 
 export default function ProfileScreen() {

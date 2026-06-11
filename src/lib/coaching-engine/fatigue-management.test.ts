@@ -107,7 +107,7 @@ describe('fatigue management', () => {
     assert.equal(shouldProtectFromConsecutiveLowerLoad(mixed), false);
   });
 
-  it('swaps lower-dominant session after heavy prior two sessions', () => {
+  it('keeps planned session after heavy prior two sessions (no fatigue swap)', () => {
     const profile = mockProfile();
     const history = [
       {
@@ -137,16 +137,11 @@ describe('fatigue management', () => {
       history,
       '2026-06-06'
     );
-    assert.equal(result.fatigueAdjusted, true);
-    assert.ok(
-      result.type === 'run' ||
-        (result.type === 'strength' &&
-          resolveSlot('strength', profile, result.slotContext).category ===
-            'strength_upper')
-    );
+    assert.equal(result.fatigueAdjusted, false);
+    assert.equal(result.type, 'hyrox');
   });
 
-  it('swaps high-fatigue session when rolling window would exceed max', () => {
+  it('keeps planned session when rolling window would exceed max (no fatigue swap)', () => {
     const profile = mockProfile();
     const history = [
       {
@@ -179,15 +174,12 @@ describe('fatigue management', () => {
       '2026-06-04'
     );
 
-    assert.equal(result.fatigueAdjusted, true);
-    assert.ok(result.fatigueScore <= 1);
-    assert.ok(
-      result.type === 'run' ||
-        (result.type === 'strength' && result.fatigueScore === 1)
-    );
+    assert.equal(result.fatigueAdjusted, false);
+    assert.equal(result.type, 'hyrox');
+    assert.ok(result.fatigueScore >= 2);
   });
 
-  it('generated plan includes fatigue-adjusted sessions after stacked load', () => {
+  it('generated plan does not fatigue-swap sessions', () => {
     const plan = generateTrainingPlan(mockProfile());
     const adjusted = plan.workouts.filter(
       (w) =>
@@ -195,6 +187,6 @@ describe('fatigue management', () => {
         w.coachNote.includes('legs needed a break') ||
         w.coachNote.includes('legs recover')
     );
-    assert.ok(adjusted.length >= 1);
+    assert.equal(adjusted.length, 0);
   });
 });

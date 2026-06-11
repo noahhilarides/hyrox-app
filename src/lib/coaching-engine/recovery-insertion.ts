@@ -1,4 +1,3 @@
-import { isPerformanceTrainingGoal } from '@/lib/performance-training';
 import { isBeginnerAthlete } from '@/lib/profile-levels';
 import { scheduleRecoveryWeekLegacy } from '@/lib/recovery-prescription';
 import type { OnboardingProfile, WorkoutType } from '@/types';
@@ -24,7 +23,6 @@ export function isProactiveRecoveryWeek(
   weekIndex: number,
   profile: OnboardingProfile
 ): boolean {
-  if (isPerformanceTrainingGoal(profile.goal)) return false;
   if (profile.daysPerWeek <= 3) return false;
   if (isBeginnerAthlete(profile)) return false;
 

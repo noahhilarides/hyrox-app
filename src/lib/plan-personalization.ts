@@ -68,7 +68,6 @@ export function getPersonalizedPlanTitle(
   }
 
   if (profile.goal === 'hybrid_fitness') return 'Hybrid performance';
-  if (profile.goal === 'performance_training') return 'Performance Training';
   if (profile.goal === 'endurance') return 'Endurance block';
   if (profile.goal === 'strength') return 'Strength & engine';
   if (profile.goal === 'return_to_fitness') return 'Return to fitness';
@@ -124,9 +123,6 @@ export function getProgressionNarrative(
   }
   if (profile?.goal === 'strength') {
     return `Strength-first block in ${phaseLabel}. Conditioning supports, never steals, your lifts.`;
-  }
-  if (profile?.goal === 'performance_training') {
-    return `Year-round performance block — ${focusHint} Sessions progress every week within a 4-week cycle.`;
   }
   return `${getPhaseLabel(phase)} — ${focusHint}`;
 }

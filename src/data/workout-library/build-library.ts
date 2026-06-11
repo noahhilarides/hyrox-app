@@ -53,6 +53,10 @@ export function getWorkoutsByCategory(category: WorkoutCategory): WorkoutTemplat
   return WORKOUT_LIBRARY[category] ?? [];
 }
 
+export function getAllWorkouts(): WorkoutTemplate[] {
+  return ALL_WORKOUT_TEMPLATES;
+}
+
 /** All library templates that include the given tag (case-sensitive). */
 export function getWorkoutsByTag(tag: string): WorkoutTemplate[] {
   return ALL_WORKOUT_TEMPLATES.filter((t) => t.tags.includes(tag));

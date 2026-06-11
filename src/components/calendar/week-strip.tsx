@@ -13,7 +13,7 @@ interface WeekStripProps {
   onSelectDate: (dateStr: string) => void;
 }
 
-/** Sun–Sat for the week containing the selected date. */
+/** Mon–Sun for the week containing the selected date. */
 export function WeekStrip({ selectedDate, workoutByDate, onSelectDate }: WeekStripProps) {
   const days = useMemo(() => {
     const anchor = parseISO(selectedDate);

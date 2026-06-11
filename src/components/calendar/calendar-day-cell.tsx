@@ -37,7 +37,7 @@ export function CalendarDayCell({
       style={styles.cell}>
       {showWeekday ? (
         <AppText style={[styles.weekday, selected && styles.weekdayOn]}>
-          {format(day, 'EEE').slice(0, 1)}
+          {format(day, 'EEE')}
         </AppText>
       ) : null}
       <View style={[styles.circle, selected && styles.circleSelected]}>
@@ -73,11 +73,11 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   weekday: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '600',
     color: palette.textSecondary,
     opacity: 0.55,
-    textTransform: 'uppercase',
+    letterSpacing: -0.2,
   },
   weekdayOn: {
     opacity: 0.85,

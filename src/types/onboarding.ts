@@ -6,11 +6,13 @@ export type OnboardingWeakness =
   | 'running_endurance'
   | 'ski_erg'
   | 'sled_push'
+  | 'sled_pull'
   | 'burpees'
   | 'grip_fatigue'
   | 'recovery'
   | 'pacing'
   | 'lunges'
+  | 'wall_balls'
   | 'rowing';
 
 /** Route names under `app/(onboarding)/`. */
@@ -97,7 +99,7 @@ export const initialOnboardingDraft: OnboardingDraft = {
     daysPerWeek: null,
     workoutDays: [],
     longSessionDay: null,
-    preferredSessionMinutes: null,
+    preferredSessionMinutes: 45,
   },
   equipmentAccess: null,
   interests: [],

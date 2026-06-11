@@ -20,22 +20,10 @@ export const EQUIPMENT_ACCESS_OPTIONS: EquipmentAccessOption[] = [
     icon: 'barbell',
   },
   {
-    value: 'home_gym',
-    title: 'Home gym',
-    description: 'Limited kit — dumbbells, bench, maybe a rower.',
-    icon: 'home',
-  },
-  {
     value: 'dumbbells_only',
-    title: 'Dumbbells only',
-    description: 'Minimal equipment — smart substitutions.',
+    title: 'Dumbbells / Kettlebells',
+    description: 'DB & KB substitutions for every station.',
     icon: 'fitness',
-  },
-  {
-    value: 'bodyweight_only',
-    title: 'Bodyweight only',
-    description: 'No weights — run-focused + calisthenics.',
-    icon: 'body',
   },
   {
     value: 'hyrox_gym',
