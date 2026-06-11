@@ -216,3 +216,36 @@ Coaching engine test suites under `src/lib/coaching-engine/*.test.ts` plus `work
 - Add load/weight prescriptions to lifts/sled/carry (needs a real coach).
 - Pre-existing strength-assignment test still skipped/failing (title regex doesn't count "Sled Pull Strength" as lower) — unrelated to this work.
 - NON-GENERATOR launch work still pending: Activities screen, paywall/subscription, App Store submission (branding, screenshots, privacy policy, TestFlight, bundle IDs).
+
+## Session: Onboarding cleanup + Equipment substitution layer
+
+### COMPLETED & VERIFIED
+- Race screen: removed "have you raced before" question; isComplete = race selection only
+- Weaknesses: cut Recovery + Pacing; added Sled Pull + Wall Balls (now: running_endurance, ski_erg, sled_push, sled_pull, burpees, grip_fatigue, wall_balls, lunges, rowing) — type/mapper/summary updated
+- Removed interests/add-ons step from onboarding flow (files kept, step removed; summary hides empty tags)
+- Equipment options trimmed to 3 selectable: full_gym (Commercial), dumbbells_only (renamed "Dumbbells / Kettlebells"), hyrox_gym (CrossFit). Removed home_gym + bodyweight_only from options; types preserved.
+- BUILT equipment substitution layer (src/lib/generator-v2/equipment-substitution.ts):
+  - applyEquipmentSubstitutions(session, equipment) runs as final pass; gym tiers untouched; only dumbbells_only swaps
+  - Threaded equipment: GeneratePlanV2Input → generate-plan.ts → preview script (5th CLI arg)
+  - Name swaps: Back Squat→Goblet Squat, Bench→DB Bench Press, Deadlift→DB Romanian Deadlift, Wall Balls→DB Thrusters, SkiErg→Banded Pulldown, Row→DB Bent-over Row, Sled Push→DB Walking Lunges, Sled Pull→See-Saw Rows, Farmers Carry→DB Farmers Carry, Sandbag Lunges→DB Walking Lunges
+  - Prescription swaps: erg/sled meters→"20 reps" (See-Saw "20 reps (10/side)"); "max meters"→"max reps"; DB Farmers Carry keeps distance
+  - De-dupe: same-movement collisions in a block merge to one at 1.5x reps (two 20→30); "Walking Lunges" & "DB Walking Lunges" treated as same
+  - VERIFIED: dumbbell swaps fire; full_gym fully untouched; tsc exit 0
+- Committed + pushed to GitHub
+
+### NEXT STEPS (in order)
+1. Wire WEAKNESSES into generator — picking a weak station biases volume toward it (real generator change; currently display-only, applies to race + hybrid modes)
+2. BUG: start-date card overlap ("Plan begins" text colliding with Next Monday/In one week cards)
+3. BUG: clipped card text on weakness/multi-select grids + grid spacing pass
+4. Activities screen (placeholders → real) — biggest UI gap
+5. Profile polish
+6. Community tab — build or hide "coming soon" for v1
+7. Launch prep: app icon, screenshots, privacy policy, $99 Apple account, App Store submission (free, no paywall, gather Reddit feedback)
+
+### PARKED
+- Decouple strength/running levels (mixed-ability). Verified strength schemes barely differ by level (effort-cue based) → low priority.
+
+### KEY FACTS
+- Preview: npx tsx scripts/preview-plan-v2.ts <level> <days> <running> <equipment>
+- v2 generator reads: level, days, runningExperience, raceDate, mode. Now also equipment (via final pass). Still does NOT read weaknesses or interests.
+- Reddit: posted in r/hyrox asking about tailored plan apps (market signal test)
