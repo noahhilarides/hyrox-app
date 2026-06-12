@@ -249,3 +249,25 @@ Coaching engine test suites under `src/lib/coaching-engine/*.test.ts` plus `work
 - Preview: npx tsx scripts/preview-plan-v2.ts <level> <days> <running> <equipment>
 - v2 generator reads: level, days, runningExperience, raceDate, mode. Now also equipment (via final pass). Still does NOT read weaknesses or interests.
 - Reddit: posted in r/hyrox asking about tailored plan apps (market signal test)
+
+## Session continued: Weaknesses wired into generator (DONE)
+
+COMPLETED & VERIFIED
+- Weaknesses now affect the v2 plan (previously display-only). Two mechanisms, both fire only when user picks a weakness; empty weakStations = original plan untouched.
+- New file src/lib/generator-v2/weakness-stations.ts: onboardingWeaknessesToStations maps onboarding weaknesses to HyroxStation tags (running_endurance/recovery/pacing skipped; deduped).
+- Threaded weakStations: profile.onboardingWeaknesses (new field on OnboardingProfile, set in draftToOnboardingProfile from draft.weaknesses to preserve station-level picks past the lossy legacy Weakness type) -> to-training-plan.ts -> generatePlanV2 -> composeSession -> pickers + scaleMovement.
+- Selection bias: pickConditioningPiece + pickStrengthHyroxPiece favor weak-station pieces on even weeks, normal rotation odd weeks (balanced, all stations still appear).
+- Volume bump: scaleMovement applies 1.35x to a weak station's already-progressed prescription. Reps round to nearest 5; meters round to nearest 25 (so 50m sled -> 75m; nearest-50 was erasing the bump). Farmers carry still capped 200m. Sled push/pull DO get bumped for weakness even though normal progression leaves them flat. max reps/meters skipped.
+- VERIFIED: sled-weak -> 75m sled; wall-ball-weak -> 55 reps; no-weakness plan unchanged at 50m. tsc exit 0.
+- Preview now: npx tsx scripts/preview-plan-v2.ts <level> <days> <running> <equipment> <weaknesses-comma-separated>
+
+NEXT STEPS (in order)
+1. BUG: start-date card overlap ("Plan begins" text colliding with Next Monday/In one week cards)
+2. BUG: clipped card text on weakness/multi-select grids + grid spacing pass
+3. Activities screen (placeholders -> real) — biggest UI gap
+4. Profile polish
+5. Community tab — build or hide for v1
+6. Launch prep: icon, screenshots, privacy policy, $99 Apple account, submission (free, no paywall)
+
+PARKED
+- Decouple strength/running level
