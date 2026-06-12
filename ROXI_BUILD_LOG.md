@@ -304,3 +304,44 @@ ALSO PENDING (polish/content):
 PARKED: decouple strength/running levels (mixed-ability; strength schemes barely differ by level anyway)
 LAUNCH: icon, screenshots, privacy policy, $99 Apple account, submission (free, no paywall, Reddit feedback first)
 REDDIT: posted in r/hyrox asking about tailored plan apps (market signal test)
+
+## Session continued: bug fixes, screen polish, dash pass (partial), next-up plan
+
+COMPLETED & VERIFIED THIS SESSION
+- Workout detail screen polished (removed "upper" pill, intensity moved left, grounded coach note, removed "base phase" kept duration, fixed bottom cutoff scroll paddingBottom 180->240, closed dead gap).
+- Start-date screen: removed redundant "Plan begins" hint (overlap gone).
+- PAST-WORKOUTS BUG FIXED (generate-plan.ts): skips sessions before startDate ("if (date < startDateStr) continue"). Was snapping week 1 to Monday of start week, showing phantom pre-start days. Verified.
+- DASH VOICE PASS (PARTIAL): cleaned user-facing em-dashes in abilities.ts, equipment-access.ts, runs.ts, conditioning.ts, compose-session.ts (coach notes), strength-progression.ts (effortCues), today-featured-workout.tsx, plan.tsx subtitle, onboarding subtitles (strength/running/equipment-level), workout/[date].tsx, coaching-philosophy.ts, workout-substitution-guidance.ts, hyrox-station-cues.ts, plan-personalization.ts. All committed + pushed.
+
+NEXT SESSION - START HERE:
+
+1. FINISH DASH SWEEP (do first, but smartly): Remaining em-dashes are almost ALL in workout-library content: generator-templates.ts, coaching-metadata/overrides.ts + rpe.ts + resolve.ts, coaching-engine/assemble.ts, plan-generator.ts, data/workout-library/*.ts (engine/hybrid/speed/skills/aerobic/strength/recovery), data/today/feed-modules.ts. STEP ONE: determine which of these v2 actually RENDERS vs dead old-engine code (v2 generator is src/lib/generator-v2/ and does NOT use the old workout-library templates for plan generation). Only clean dashes in files that are actually shown to users. Don't waste effort on dead code. Keep "—" empty-data placeholders, en-dashes in ranges (6-7, 30-40%), and code comments.
+
+2. BIG SCREEN BUILDS (real builds - the bulk of remaining work). Reference: Runna's onboarding/reveal flow (Noah likes it). 
+   a. POST-GENERATE REVEAL FLOW (high value, Noah specifically wants this) - emulate Runna's sequence after "Generate my plan":
+      - Loading screen: "Building your plan" + animation + progress bar (2-4 sec, makes plan feel crafted)
+      - Reveal screen: "Welcome Noah, your plan is ready" + plan/race badge (celebratory payoff)
+      - Then drop into Today screen
+      (Runna does more: welcome details, estimated race times, "meet your coaching team", "types of run" guide, top tips. Decide how much to emulate for v1 - loading + reveal are the must-haves.)
+   b. Today screen - build out (currently shows "0/0 sessions"/rest day when starting mid-week; check it doesn't feel empty for new users)
+   c. Plan screen - build out
+   d. Activities screen - build (biggest gap, currently placeholders)
+   e. Profile screen - build (currently basic sheet, needs real profile: stats, race info, settings, connections)
+   f. Community screen - build or hide "coming soon" for v1
+   Decide v1 scope per screen before building (cut what's not needed for launch to hit competitor timing).
+
+3. POLISH/CONTENT (lower priority):
+   - Richer coach notes (vary by type/phase/level - currently bland; central to "coach-written" differentiator)
+   - Beginner set-splitting guidance (e.g. "50 reps, break into sets as needed")
+   - Onboarding summary/plan screen improvement
+
+PARKED: decouple strength/running levels (mixed-ability; strength schemes barely differ by level anyway - low priority)
+
+LAUNCH: app icon, screenshots, privacy policy, $99 Apple Developer account, App Store submission. Free, no paywall, gather Reddit feedback first.
+
+REDDIT: posted in r/hyrox asking about tailored training plan apps (market signal test - check for replies).
+
+KEY FACTS:
+- Preview: npx tsx scripts/preview-plan-v2.ts <level> <days> <running> <equipment> <weaknesses-comma-separated>
+- v2 generator (src/lib/generator-v2/) reads: level, days, runningExperience, raceDate, mode, equipment (substitution final pass), weaknesses (selection bias + 1.35x volume bump). Does NOT read interests/add-ons.
+- Reset sim to test onboarding: npx expo start -c, then Erase All Content and Settings, re-onboard.
