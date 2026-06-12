@@ -52,6 +52,7 @@ export function draftToOnboardingProfile(draft: OnboardingDraft): OnboardingProf
       draft.weaknesses.length > 0
         ? onboardingWeaknessesToProfile(draft.weaknesses)
         : ['running'],
+    onboardingWeaknesses: draft.weaknesses,
     workoutLength,
     planStartDate:
       draft.planStartDate ?? format(startOfDay(new Date()), 'yyyy-MM-dd'),

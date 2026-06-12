@@ -198,22 +198,49 @@ export function piecesForType(type: SessionType): ConditioningPiece[] {
   return CONDITIONING_PIECES.filter((p) => p.fitsTypes.includes(type));
 }
 
+export function pieceHitsWeakness(
+  piece: ConditioningPiece,
+  weakStations: HyroxStation[]
+): boolean {
+  if (weakStations.length === 0) return false;
+  return piece.movements.some(
+    (m) => m.station != null && weakStations.includes(m.station)
+  );
+}
+
 /** Picks a conditioning piece for a type, rotating by week for variety. */
-export function pickConditioningPiece(type: SessionType, weekIndex: number): ConditioningPiece | undefined {
+export function pickConditioningPiece(
+  type: SessionType,
+  weekIndex: number,
+  weakStations: HyroxStation[] = []
+): ConditioningPiece | undefined {
   const options = piecesForType(type);
   if (options.length === 0) return undefined;
+
+  const weaknessPieces = options.filter((p) => pieceHitsWeakness(p, weakStations));
+  if (weaknessPieces.length > 0 && weekIndex % 2 === 0) {
+    return weaknessPieces[weekIndex % weaknessPieces.length];
+  }
+
   return options[weekIndex % options.length];
 }
 
 /** Picks a strength_hyrox conditioning piece matched to focus, rotated by week. */
 export function pickStrengthHyroxPiece(
   focus: StrengthFocus,
-  weekIndex: number
+  weekIndex: number,
+  weakStations: HyroxStation[] = []
 ): ConditioningPiece | undefined {
   const lowerIds = ['cond-sh-lower-sled', 'cond-sh-lower-wallball'];
   const upperIds = ['cond-sh-upper-ski-row', 'cond-sh-upper-burpee'];
   const ids = focus === 'upper' ? upperIds : lowerIds;
   const pool = CONDITIONING_PIECES.filter((p) => ids.includes(p.id));
   if (pool.length === 0) return undefined;
+
+  const weaknessPieces = pool.filter((p) => pieceHitsWeakness(p, weakStations));
+  if (weaknessPieces.length > 0 && weekIndex % 2 === 0) {
+    return weaknessPieces[weekIndex % weaknessPieces.length];
+  }
+
   return pool[weekIndex % pool.length];
 }

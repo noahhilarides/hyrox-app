@@ -1,5 +1,5 @@
 import { addDays, format, startOfWeek } from 'date-fns';
-import type { Session } from '@/types/session';
+import type { HyroxStation, Session } from '@/types/session';
 import type { ExperienceLevel } from '@/types';
 import type { OnboardingEquipment } from '@/types/onboarding';
 import { weekPhase } from '@/lib/recovery-prescription';
@@ -17,6 +17,7 @@ export interface GeneratePlanV2Input {
   runningExperience: ExperienceLevel;
   mode?: 'race' | 'rolling';
   equipment?: OnboardingEquipment;
+  weakStations?: HyroxStation[];
 }
 
 export interface PlanV2Week {
@@ -52,6 +53,7 @@ export function generatePlanV2(input: GeneratePlanV2Input): PlanV2 {
         phase,
         weekIndex,
         runningExperience,
+        weakStations: input.weakStations,
       });
       sessions.push(applyEquipmentSubstitutions(composed, input.equipment ?? 'full_gym'));
     }

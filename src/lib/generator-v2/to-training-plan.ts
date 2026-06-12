@@ -2,6 +2,7 @@ import { format, startOfDay } from 'date-fns';
 import type { Session, Block } from '@/types/session';
 import type { OnboardingProfile, TrainingPlan, Workout, Exercise, WorkoutType } from '@/types';
 import { generatePlanV2 } from './generate-plan';
+import { onboardingWeaknessesToStations } from './weakness-stations';
 
 /** Maps a v2 SessionType to the app's WorkoutType badge. */
 function sessionTypeToWorkoutType(session: Session): WorkoutType {
@@ -77,6 +78,7 @@ export function generateTrainingPlanV2(
     startDate,
     runningExperience: profile.runningExperience,
     mode,
+    weakStations: onboardingWeaknessesToStations(profile.onboardingWeaknesses ?? []),
   });
 
   let index = 0;

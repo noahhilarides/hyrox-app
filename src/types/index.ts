@@ -1,3 +1,5 @@
+import type { OnboardingWeakness } from '@/types/onboarding';
+
 export type Goal =
   | 'hyrox_race'
   | 'hybrid_fitness'
@@ -56,6 +58,8 @@ export interface OnboardingProfile {
   trainingDayIndices?: number[];
   equipment: Equipment[];
   weaknesses: Weakness[];
+  /** Raw onboarding weakness selections (station-level); used by v2 generator. */
+  onboardingWeaknesses?: OnboardingWeakness[];
   workoutLength: WorkoutLength;
   /** ISO date (yyyy-MM-dd) — first scheduled session. Defaults to today if omitted. */
   planStartDate?: string | null;

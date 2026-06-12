@@ -1,9 +1,16 @@
 import { generatePlanV2 } from '../src/lib/generator-v2/generate-plan';
+import { onboardingWeaknessesToStations } from '../src/lib/generator-v2/weakness-stations';
+import type { OnboardingWeakness } from '../src/types/onboarding';
 
 const level = (process.argv[2] ?? 'beginner') as 'beginner' | 'intermediate' | 'advanced';
 const daysPerWeek = Number(process.argv[3] ?? 5);
 const runningExperience = (process.argv[4] ?? 'none') as 'none' | 'some' | 'regular' | 'competitive';
 const equipment = (process.argv[5] ?? 'full_gym') as 'full_gym' | 'dumbbells_only' | 'hyrox_gym';
+const weaknessArg = process.argv[6];
+const onboardingWeaknesses = weaknessArg
+  ? (weaknessArg.split(',').map((w) => w.trim()) as OnboardingWeakness[])
+  : [];
+const weakStations = onboardingWeaknessesToStations(onboardingWeaknesses);
 
 const dayIndices: Record<number, number[]> = {
   3: [1, 3, 5],
@@ -20,10 +27,13 @@ const plan = generatePlanV2({
   startDate: new Date(),
   runningExperience,
   equipment,
+  weakStations,
 });
 
 const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-console.log(`\n### ${level.toUpperCase()} / ${daysPerWeek}-day / running:${runningExperience} / equip:${equipment} ###`);
+console.log(
+  `\n### ${level.toUpperCase()} / ${daysPerWeek}-day / running:${runningExperience} / equip:${equipment} / weak:${weaknessArg ?? '-'} ###`
+);
 
 for (const week of plan.weeks) {
   console.log(`\n===== WEEK ${week.weekIndex + 1} (${week.phase.toUpperCase()}) =====`);

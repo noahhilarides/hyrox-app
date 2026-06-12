@@ -1,4 +1,4 @@
-import type { Block, Movement, Session, SessionType, StrengthFocus } from '@/types/session';
+import type { Block, HyroxStation, Movement, Session, SessionType, StrengthFocus } from '@/types/session';
 import type { ExperienceLevel } from '@/types';
 import type { WeekPhase } from '@/lib/recovery-prescription';
 import { computeWeekProgression } from '@/lib/plan-progression';
@@ -18,6 +18,7 @@ export interface ComposeContext {
   phase: WeekPhase;
   weekIndex: number;
   runningExperience: ExperienceLevel;
+  weakStations?: HyroxStation[];
 }
 
 /** Approximate session duration by type. */
@@ -50,7 +51,11 @@ const FOCUS_LABEL: Record<StrengthFocus, string> = {
 };
 
 /** Scales a movement's prescription using week progression where applicable. */
-function scaleMovement(m: Movement, weekIndex: number): Movement {
+function scaleMovement(
+  m: Movement,
+  weekIndex: number,
+  weakStations: HyroxStation[] = []
+): Movement {
   const repBump = Math.min(15, weekIndex);
   const distBump = Math.min(250, Math.floor(weekIndex / 2) * 50);
 
@@ -61,35 +66,49 @@ function scaleMovement(m: Movement, weekIndex: number): Movement {
   // Erg distances that progress and round to nearest 50m.
   const ergStations = ['ski_erg', 'row'];
 
+  let scaled = m;
+
   if (m.station && repStations.includes(m.station)) {
     const match = m.prescription.match(/(\d+)\s*reps/);
     if (match) {
       const base = parseInt(match[1]!, 10);
-      return { ...m, prescription: `${roundTo(base + repBump, 5)} reps` };
+      scaled = { ...m, prescription: `${roundTo(base + repBump, 5)} reps` };
     }
-  }
-
-  if (m.station && ergStations.includes(m.station)) {
+  } else if (m.station && ergStations.includes(m.station)) {
     const match = m.prescription.match(/(\d+)m/);
     if (match) {
       const base = parseInt(match[1]!, 10);
-      return { ...m, prescription: `${roundTo(base + distBump, 50)}m` };
+      scaled = { ...m, prescription: `${roundTo(base + distBump, 50)}m` };
     }
-  }
-
-  // Farmers carry: progress modestly, never exceed the race distance (200m).
-  if (m.station === 'farmers_carry') {
+  } else if (m.station === 'farmers_carry') {
     const match = m.prescription.match(/(\d+)m/);
     if (match) {
       const base = parseInt(match[1]!, 10);
       const carryBump = Math.min(100, distBump);
-      const scaled = roundTo(base + carryBump, 50);
-      return { ...m, prescription: `${Math.min(200, scaled)}m` };
+      const progressed = roundTo(base + carryBump, 50);
+      scaled = { ...m, prescription: `${Math.min(200, progressed)}m` };
     }
   }
 
-  // Sled (push/pull) intentionally NOT distance-scaled — stays at its base distance.
-  return m;
+  if (weakStations.length === 0 || !scaled.station || !weakStations.includes(scaled.station)) {
+    return scaled;
+  }
+
+  const repMatch = scaled.prescription.match(/(\d+)\s*reps/);
+  if (repMatch) {
+    const reps = parseInt(repMatch[1]!, 10);
+    return { ...scaled, prescription: `${roundTo(reps * 1.35, 5)} reps` };
+  }
+
+  const distMatch = scaled.prescription.match(/(\d+)m/);
+  if (distMatch) {
+    const dist = parseInt(distMatch[1]!, 10);
+    const bumped = roundTo(dist * 1.35, 25);
+    const capped = scaled.station === 'farmers_carry' ? Math.min(200, bumped) : bumped;
+    return { ...scaled, prescription: `${capped}m` };
+  }
+
+  return scaled;
 }
 
 /** Builds the warm-up block for a session. */
@@ -167,7 +186,8 @@ function buildConditioning(
   weekIndex: number,
   phase: WeekPhase,
   runningExperience: ExperienceLevel,
-  strengthFocus?: StrengthFocus
+  strengthFocus?: StrengthFocus,
+  weakStations: HyroxStation[] = []
 ): Block {
   if (type === 'aerobic' || type === 'run_speed') {
     return buildRunConditioning(type, weekIndex, phase, runningExperience);
@@ -175,8 +195,8 @@ function buildConditioning(
 
   const piece =
     type === 'strength_hyrox' && strengthFocus
-      ? pickStrengthHyroxPiece(strengthFocus, weekIndex)
-      : pickConditioningPiece(type, weekIndex);
+      ? pickStrengthHyroxPiece(strengthFocus, weekIndex, weakStations)
+      : pickConditioningPiece(type, weekIndex, weakStations);
 
   if (!piece) {
     return {
@@ -196,7 +216,7 @@ function buildConditioning(
     label: conditioningLabel(type),
     format: piece.format,
     prescriptionNote: piece.prescriptionNote,
-    movements: piece.movements.map((m) => scaleMovement(m, weekIndex)),
+    movements: piece.movements.map((m) => scaleMovement(m, weekIndex, weakStations)),
   };
 }
 
@@ -251,7 +271,16 @@ export function composeSession(ctx: ComposeContext): Session {
     blocks.push(buildStrength(strengthFocus, phase, weekIndex));
   }
 
-  blocks.push(buildConditioning(type, weekIndex, phase, ctx.runningExperience, strengthFocus));
+  blocks.push(
+    buildConditioning(
+      type,
+      weekIndex,
+      phase,
+      ctx.runningExperience,
+      strengthFocus,
+      ctx.weakStations ?? []
+    )
+  );
 
   if (hasCoreBlock(type)) {
     blocks.push({ ...corePieceAsBlock(weekIndex) });
