@@ -8,7 +8,6 @@ import { Screen } from '@/components/ui/screen';
 import { AppText } from '@/components/ui/text';
 import { WorkoutCoachNoteCard } from '@/components/workout/workout-coach-note-card';
 import { WorkoutExerciseList } from '@/components/workout/workout-exercise-list';
-import { WorkoutFocusChips } from '@/components/workout/workout-focus-chips';
 import { WorkoutIntensityIndicator } from '@/components/workout/workout-intensity-indicator';
 import { WorkoutTypeBadge } from '@/components/workout-type-badge';
 import { palette, spacing, typography } from '@/constants/tokens';
@@ -70,17 +69,11 @@ export default function WorkoutDetailScreen() {
 
           <AppText style={styles.title}>{workout.title}</AppText>
 
-          <AppText style={styles.subtitle}>
-            {workout.subtitle} · {workout.durationMinutes} min
-          </AppText>
-
-          <WorkoutFocusChips tags={workout.focus} />
+          <AppText style={styles.subtitle}>{workout.durationMinutes} min</AppText>
 
           <View style={styles.sectionSpacer} />
 
           <WorkoutCoachNoteCard note={workout.coachNote} />
-
-          <View style={styles.sectionFade} />
 
           <WorkoutExerciseList exercises={workout.exercises} />
         </View>
@@ -119,7 +112,7 @@ export default function WorkoutDetailScreen() {
 
 const styles = StyleSheet.create({
   scroll: {
-    paddingBottom: 180,
+    paddingBottom: 240,
   },
   pad: {
     paddingHorizontal: spacing.lg,
@@ -146,7 +139,8 @@ const styles = StyleSheet.create({
   headerMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   title: {
@@ -155,7 +149,7 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     color: palette.text,
     letterSpacing: -0.8,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: 15,
@@ -164,12 +158,10 @@ const styles = StyleSheet.create({
     color: palette.textSecondary,
     opacity: 0.72,
     maxWidth: '95%',
+    marginBottom: spacing.md,
   },
   sectionSpacer: {
-    height: spacing.md,
-  },
-  sectionFade: {
-    height: spacing.xl,
+    height: spacing.sm,
   },
   footer: {
     position: 'absolute',

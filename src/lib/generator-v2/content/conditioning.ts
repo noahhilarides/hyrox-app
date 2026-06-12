@@ -152,7 +152,7 @@ export const CONDITIONING_PIECES: ConditioningPiece[] = [
   {
     id: 'cond-ultra-full-grind',
     format: 'for_time',
-    prescriptionNote: 'For time — pace it, this is long',
+    prescriptionNote: 'For time. Pace it, this is long',
     movements: [
       { name: 'Run', prescription: '1000m' },
       { name: 'Wall Balls', prescription: '50 reps', station: 'wall_balls' },
@@ -167,7 +167,7 @@ export const CONDITIONING_PIECES: ConditioningPiece[] = [
   {
     id: 'cond-ultra-station-tour',
     format: 'for_time',
-    prescriptionNote: 'For time — steady, consistent splits',
+    prescriptionNote: 'For time. Steady, consistent splits',
     movements: [
       { name: 'Run', prescription: '800m' },
       { name: 'SkiErg', prescription: '500m', station: 'ski_erg' },

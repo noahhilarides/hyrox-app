@@ -5,13 +5,12 @@ import { ContinueButton } from '@/components/onboarding/continue-button';
 import { OnboardingContainer } from '@/components/onboarding/onboarding-container';
 import { OnboardingScreenIntro } from '@/components/onboarding/onboarding-screen-intro';
 import { SelectionCard } from '@/components/onboarding/selection-card';
-import { AppText } from '@/components/ui/text';
 import {
   buildPlanStartOptions,
   resolvePlanStartDate,
   type PlanStartPreset,
 } from '@/data/onboarding/plan-start-options';
-import { onboardingSpacing, onboardingTheme } from '@/data/onboarding/theme';
+import { onboardingSpacing } from '@/data/onboarding/theme';
 import { useOnboardingNavigation } from '@/hooks/use-onboarding-navigation';
 import { useOnboardingStore } from '@/store/onboarding-store';
 
@@ -60,14 +59,6 @@ export default function PlanStartScreen() {
           />
         ))}
       </Animated.View>
-
-      {planStartDate ? (
-        <Animated.View entering={FadeIn.delay(200).duration(300)} style={styles.hintRow}>
-          <AppText style={styles.hint}>
-            Plan begins {OPTIONS.find((o) => o.value === selectedPreset)?.description ?? planStartDate}
-          </AppText>
-        </Animated.View>
-      ) : null}
     </OnboardingContainer>
   );
 }
@@ -78,15 +69,5 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginHorizontal: -onboardingSpacing.sm,
     paddingBottom: onboardingSpacing.md,
-  },
-  hintRow: {
-    paddingTop: onboardingSpacing.sm,
-    alignItems: 'center',
-  },
-  hint: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: onboardingTheme.textSubtle,
-    textAlign: 'center',
   },
 });

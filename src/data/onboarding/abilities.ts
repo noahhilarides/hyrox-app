@@ -18,7 +18,7 @@ export const RUNNING_ABILITY_OPTIONS: AbilityOption[] = [
   {
     value: 'beginner',
     title: 'Beginner',
-    description: 'Building a base — mostly walk/jog intervals.',
+    description: 'Building a base, mostly walk/jog intervals.',
     levelIndex: 0,
     icon: 'walk',
   },
@@ -32,14 +32,14 @@ export const RUNNING_ABILITY_OPTIONS: AbilityOption[] = [
   {
     value: 'advanced',
     title: 'Advanced',
-    description: 'Regular running — tempo and longer efforts.',
+    description: 'Regular running with tempo and longer efforts.',
     levelIndex: 2,
     icon: 'speedometer',
   },
   {
     value: 'elite',
     title: 'Elite',
-    description: 'High volume — race-pace work is routine.',
+    description: 'High volume. Race-pace work is routine.',
     levelIndex: 3,
     icon: 'flash',
   },
@@ -49,7 +49,7 @@ export const STRENGTH_ABILITY_OPTIONS: AbilityOption[] = [
   {
     value: 'beginner',
     title: 'Beginner',
-    description: 'Learning movements — focus on form and consistency.',
+    description: 'Learning movements. Focus on form and consistency.',
     levelIndex: 0,
     icon: 'barbell-outline',
   },
@@ -70,7 +70,7 @@ export const STRENGTH_ABILITY_OPTIONS: AbilityOption[] = [
   {
     value: 'elite',
     title: 'Elite',
-    description: 'High force output — handles heavy hybrid blocks.',
+    description: 'High force output. Handles heavy hybrid blocks.',
     levelIndex: 3,
     icon: 'trophy',
   },

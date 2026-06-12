@@ -34,6 +34,7 @@ export interface PlanV2 {
 export function generatePlanV2(input: GeneratePlanV2Input): PlanV2 {
   const { level, daysPerWeek, totalWeeks, trainingDayIndices, startDate, runningExperience } =
     input;
+  const startDateStr = format(startDate, 'yyyy-MM-dd');
   const weeks: PlanV2Week[] = [];
 
   for (let weekIndex = 0; weekIndex < totalWeeks; weekIndex++) {
@@ -45,6 +46,7 @@ export function generatePlanV2(input: GeneratePlanV2Input): PlanV2 {
     for (let i = 0; i < trainingDayIndices.length && i < structure.length; i++) {
       const dayOffset = trainingDayIndices[i] === 0 ? 6 : trainingDayIndices[i] - 1;
       const date = format(addDays(weekStart, dayOffset), 'yyyy-MM-dd');
+      if (date < startDateStr) continue;
       const slot = structure[i]!;
       const composed = composeSession({
         date,

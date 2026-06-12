@@ -1,4 +1,4 @@
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/text';
 import { palette, radius, spacing } from '@/constants/tokens';
@@ -10,7 +10,6 @@ interface WorkoutCoachNoteCardProps {
 export function WorkoutCoachNoteCard({ note }: WorkoutCoachNoteCardProps) {
   return (
     <View style={styles.wrap}>
-      <View style={styles.glow} pointerEvents="none" />
       <View style={styles.card}>
         <AppText style={styles.eyebrow}>Coach note</AppText>
         <AppText style={styles.body}>{note}</AppText>
@@ -21,30 +20,11 @@ export function WorkoutCoachNoteCard({ note }: WorkoutCoachNoteCardProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    marginTop: spacing.xl,
+    marginTop: 0,
     position: 'relative',
   },
-  glow: {
-    position: 'absolute',
-    top: 8,
-    left: 12,
-    right: 12,
-    height: '70%',
-    borderRadius: radius.lg,
-    backgroundColor: 'rgba(244, 229, 0, 0.14)',
-    opacity: 0.6,
-    ...Platform.select({
-      ios: {
-        shadowColor: palette.accent,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
-      },
-      android: {},
-    }),
-  },
   card: {
-    backgroundColor: 'rgba(244, 229, 0, 0.14)',
+    backgroundColor: palette.bgCard,
     borderRadius: radius.lg,
     padding: spacing.lg,
     borderWidth: 1,

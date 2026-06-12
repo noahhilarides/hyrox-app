@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PlanActionCard } from '@/components/plan/plan-action-card';
@@ -36,6 +36,13 @@ export default function TodayScreen() {
   const today = format(new Date(), 'yyyy-MM-dd');
   const [selectedDate, setSelectedDate] = useState(today);
   const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const handleCalendarExpandedChange = useCallback((open: boolean) => {
+    setCalendarOpen(open);
+    if (!open) {
+      setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
+    }
+  }, []);
 
   const active = hasActivePlan(plan);
   const selectedWorkout = useMemo(
@@ -133,7 +140,7 @@ export default function TodayScreen() {
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
           expanded={calendarOpen}
-          onExpandedChange={setCalendarOpen}
+          onExpandedChange={handleCalendarExpandedChange}
         />
 
         <TodayFeaturedWorkout

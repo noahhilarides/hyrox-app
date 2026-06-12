@@ -236,17 +236,17 @@ function buildCoachNote(type: SessionType, phase: WeekPhase, runningExperience: 
   if (type === 'strength_hyrox') {
     return phase === 'base'
       ? 'Build the lift first, then carry that strength into the workout. Focus on clean movement.'
-      : 'Lift with intent, then push the workout. This is where HYROX races are won — strength under fatigue.';
+      : 'Lift with intent, then push the workout. This is where HYROX races are won. Strength under fatigue.';
   }
   if (type === 'aerobic') {
     return runningExperience === 'none'
-      ? 'Run/walk is the plan — alternate as prescribed and keep the running easy. You are building toward continuous running.'
+      ? 'Run/walk is the plan. Alternate as prescribed and keep the running easy. You are building toward continuous running.'
       : 'Keep this easy and conversational. Aerobic base is the engine everything else runs on.';
   }
   if (type === 'run_speed') {
     return runningExperience === 'none'
-      ? 'Gentle speed exposure. Stay relaxed — this is about smooth turnover, not max effort.'
-      : 'Controlled speed. Each rep should be repeatable — build pace, finish strong.';
+      ? 'Gentle speed exposure. Stay relaxed. This is about smooth turnover, not max effort.'
+      : 'Controlled speed. Each rep should be repeatable. Build pace, finish strong.';
   }
   if (type === 'engine') {
     return 'Smooth and steady. Hold consistent splits rather than redlining early.';
@@ -255,7 +255,7 @@ function buildCoachNote(type: SessionType, phase: WeekPhase, runningExperience: 
     return 'Short and sharp. Full effort in the work windows, real rest between.';
   }
   if (type === 'express') {
-    return 'Quick session — steady pace, clean technique on every station.';
+    return 'Quick session. Steady pace, clean technique on every station.';
   }
   return 'Execute with intent.';
 }

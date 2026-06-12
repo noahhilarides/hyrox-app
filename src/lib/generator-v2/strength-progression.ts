@@ -11,10 +11,10 @@ export interface StrengthScheme {
 }
 
 const SCHEME_BY_PHASE: Record<WeekPhase, StrengthScheme> = {
-  base: { sets: 4, reps: '8', effortCue: 'Hard but smooth — leave 2 reps in reserve' },
-  build: { sets: 4, reps: '6', effortCue: 'Heavier than last block — 1-2 reps in reserve' },
-  peak: { sets: 5, reps: '3-5', effortCue: 'Near max for the rep range — stay technical' },
-  taper: { sets: 3, reps: '5', effortCue: 'Moderate — keep the pattern sharp, no grinding' },
+  base: { sets: 4, reps: '8', effortCue: 'Hard but smooth, leave 2 reps in reserve' },
+  build: { sets: 4, reps: '6', effortCue: 'Heavier than last block, 1-2 reps in reserve' },
+  peak: { sets: 5, reps: '3-5', effortCue: 'Near max for the rep range, stay technical' },
+  taper: { sets: 3, reps: '5', effortCue: 'Moderate, keep the pattern sharp, no grinding' },
 };
 
 /** Returns the sets/reps/effort scheme for a core lift in the given phase. */

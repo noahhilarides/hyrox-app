@@ -16,7 +16,7 @@ export const EQUIPMENT_ACCESS_OPTIONS: EquipmentAccessOption[] = [
   {
     value: 'full_gym',
     title: 'Commercial gym',
-    description: 'Racks, barbells, ergs, sleds — full HYROX setup.',
+    description: 'Racks, barbells, ergs, sleds. Full HYROX setup.',
     icon: 'barbell',
   },
   {
@@ -28,7 +28,7 @@ export const EQUIPMENT_ACCESS_OPTIONS: EquipmentAccessOption[] = [
   {
     value: 'hyrox_gym',
     title: 'CrossFit gym',
-    description: 'Sleds, ski, row — race-specific stations.',
+    description: 'Sleds, ski, row. Race-specific stations.',
     icon: 'flash',
   },
 ];

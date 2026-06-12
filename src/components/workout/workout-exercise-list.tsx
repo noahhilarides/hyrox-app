@@ -66,8 +66,7 @@ export function WorkoutExerciseList({ exercises }: WorkoutExerciseListProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    marginTop: spacing.xxl,
-    paddingTop: spacing.lg,
+    marginTop: spacing.md,
     gap: spacing.xl,
   },
   section: {
