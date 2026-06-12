@@ -23,7 +23,7 @@ export default function EquipmentScreen() {
       <Animated.View entering={FadeIn.duration(400)}>
         <OnboardingScreenIntro
           title="Equipment access"
-          subtitle="We'll match stations and strength work to what you actually have — no fantasy sled days."
+          subtitle="We'll match stations and strength work to what you actually have. No fantasy sled days."
         />
       </Animated.View>
 

@@ -22,7 +22,7 @@ export default function RunningLevelScreen() {
       }>
       <OnboardingScreenIntro
         title="Running ability"
-        subtitle="Your run fitness sets pacing between stations — be honest so easy days stay easy."
+        subtitle="Your run fitness sets pacing between stations. Be honest so easy days stay easy."
       />
 
       <Animated.View layout={Layout.springify()} style={styles.list}>

@@ -22,7 +22,7 @@ export default function StrengthLevelScreen() {
       }>
       <OnboardingScreenIntro
         title="Strength ability"
-        subtitle="Separate from running — we balance gym load so sleds and stations don't bury you."
+        subtitle="Separate from running. We balance gym load so sleds and stations don't bury you."
       />
 
       <Animated.View layout={Layout.springify()} style={styles.list}>

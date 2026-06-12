@@ -2,7 +2,7 @@ import type { HyroxStationKey } from '@/constants/hyrox-station-cues';
 
 /** Shared opener — every workout gets this unless overridden. */
 export const SUBSTITUTION_PREAMBLE =
-  'Match the written effort, rest, and rep scheme. Substitutions are for missing equipment — not to make the session easier.';
+  'Match the written effort, rest, and rep scheme. Substitutions are for missing equipment, not to make the session easier.';
 
 export const STATION_SUBSTITUTIONS: Record<HyroxStationKey, string> = {
   running:
@@ -16,13 +16,13 @@ export const STATION_SUBSTITUTIONS: Record<HyroxStationKey, string> = {
   sled_pull:
     'No sled: heavy bent-over row or chest-supported row, 3×8–10 @ RPE 8, same rest as written sled pulls.',
   wall_ball:
-    'No wall ball: sandbag thrusters or goblet squat to press — same reps, controlled tempo.',
+    'No wall ball: sandbag thrusters or goblet squat to press, same reps, controlled tempo.',
   burpee:
-    'Step-back burpees or box burpees count — keep full range of motion and the same rep total.',
+    'Step-back burpees or box burpees count. Keep full range of motion and the same rep total.',
   farmer_carry:
     'No implements: suitcase carry (DB/KB) same distance each hand, or sandbag bear-hug carry.',
   lunge:
-    'Walking or reverse lunges with bodyweight or DBs — count total steps to match prescribed lunge volume.',
+    'Walking or reverse lunges with bodyweight or DBs. Count total steps to match prescribed lunge volume.',
 };
 
 export const CATEGORY_SUBSTITUTION_DEFAULTS: Record<string, string> = {

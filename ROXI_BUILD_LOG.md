@@ -271,3 +271,36 @@ NEXT STEPS (in order)
 
 PARKED
 - Decouple strength/running level
+
+## Session continued: UI bug fixes + dash voice pass (partial)
+
+COMPLETED & VERIFIED
+- Workout detail screen polished: removed "upper" focus pill, moved intensity indicator left (no nav-gear collision), grounded the coach note (removed glow, fixed doubled margins, more solid bg), removed "base phase" from subtitle (kept duration), fixed bottom cutoff (scroll paddingBottom 180->240), closed dead gap between coach note and exercises (sectionFade xl->md).
+- Start-date screen (plan-start.tsx): removed redundant "Plan begins..." hint block + unused styles/imports (was overlapping cards). Cards already show dates.
+- PAST-WORKOUTS BUG FIXED: generate-plan.ts skipped phantom pre-start sessions. Week 1 was snapping to Monday of start week (startOfWeek weekStartsOn:1), showing sessions before actual start. Now: startDateStr computed once, "if (date < startDateStr) continue" skips them. Verified: Thursday start -> week 1 begins Thursday, no pre-start days. (Note: mid-week start = fewer week-1 sessions, which is correct.)
+- Equipment options trimmed earlier; substitution layer + weakness biasing done earlier this session (see prior entry).
+- DASH VOICE PASS (PARTIAL - removing em-dashes that read as AI): DONE in abilities.ts, equipment-access.ts, runs.ts (notes), conditioning.ts (prescriptionNotes), compose-session.ts (5 coach notes), strength-progression.ts (4 effortCues, kept structural template dash on compose-session line 140).
+
+NEXT STEP (do FIRST in new chat): FINISH THE DASH SWEEP. Remaining user-facing em-dashes to clean (replace with period/comma, keep wording):
+- src/components/today/today-featured-workout.tsx:34 (rest day card "No session today — absorb...")
+- src/app/(tabs)/plan.tsx:117 (subtitle "Built from your onboarding —...")
+- src/app/(onboarding)/strength-level.tsx:25, running-level.tsx:25, equipment.tsx:26 (subtitles)
+- src/app/workout/[date].tsx:105 ("Completed — nice work")
+- src/constants/coaching-philosophy.ts:60
+- src/constants/workout-substitution-guidance.ts (lines 5,19,21,25)
+- src/constants/hyrox-station-cues.ts (many lines ~17-67 - all user-facing coaching cues)
+- src/lib/plan-personalization.ts (lines 116,119,127,146,148 - phase labels/messages)
+DO NOT touch: empty-data placeholders showing "—" (activities.tsx:33-34, plan.tsx:76, workout-library/[id].tsx:60), interests.tsx (removed/unreachable), placeholder-screen.tsx, structural string-builders (to-training-plan.ts:33, apply-to-template.ts:137). Keep rep ranges (10-12 etc).
+After sweep, run final check: grep -rn "—" src/ --include="*.tsx" --include="*.ts" to confirm only structural/placeholder dashes remain.
+
+THEN: BIG SCREEN BUILDS (real builds, not polish): Today, Plan, Activities (biggest gap, placeholders), Profile (basic sheet, needs real build), Community (build or hide for v1). Decide v1 scope per screen before building.
+
+ALSO PENDING (polish/content):
+- Richer coach notes (vary by type/phase/level - currently bland, central to "coach-written" feel)
+- Beginner set-splitting guidance (e.g. "50 reps, break into sets")
+- Onboarding summary/plan screen needs improvement
+- Clipped grid card text RESOLVED (was the removed Recovery weakness)
+
+PARKED: decouple strength/running levels (mixed-ability; strength schemes barely differ by level anyway)
+LAUNCH: icon, screenshots, privacy policy, $99 Apple account, submission (free, no paywall, Reddit feedback first)
+REDDIT: posted in r/hyrox asking about tailored plan apps (market signal test)

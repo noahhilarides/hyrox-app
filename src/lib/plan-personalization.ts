@@ -113,10 +113,10 @@ export function getProgressionNarrative(
       ? 'Station work ramps as you approach race pace.'
       : weaknesses.includes('running') || weaknesses.includes('endurance')
         ? 'Run volume stays controlled while hybrid density increases.'
-        : 'Volume builds steadily — recovery is placed only when your block needs it.';
+        : 'Volume builds steadily. Recovery is placed only when your block needs it.';
 
   if (profile?.goal === 'hyrox_race') {
-    return `You're in ${phaseLabel} — ${focusHint} Simulations sharpen closer to race day.`;
+    return `You're in ${phaseLabel}. ${focusHint} Simulations sharpen closer to race day.`;
   }
   if (profile?.goal === 'endurance') {
     return `Aerobic emphasis in ${phaseLabel}. ${focusHint}`;
@@ -124,7 +124,7 @@ export function getProgressionNarrative(
   if (profile?.goal === 'strength') {
     return `Strength-first block in ${phaseLabel}. Conditioning supports, never steals, your lifts.`;
   }
-  return `${getPhaseLabel(phase)} — ${focusHint}`;
+  return `${getPhaseLabel(phase)}. ${focusHint}`;
 }
 
 export function formatRaceDateLabel(profile: OnboardingProfile | null): string | undefined {
@@ -143,9 +143,9 @@ export function getTodaySessionHeadline(
   if (!profile) return null;
   const countdown = getRaceCountdown(profile);
   if (countdown?.urgent && countdown.days <= 7) {
-    return countdown.days === 0 ? 'Race day — trust the prep' : 'Race week — stay sharp, stay fresh';
+    return countdown.days === 0 ? 'Race day. Trust the prep' : 'Race week. Stay sharp, stay fresh';
   }
-  if (phase === 'taper') return 'Taper week — quality over quantity';
+  if (phase === 'taper') return 'Taper week. Quality over quantity';
   if (isBeginnerRunner(profile)) return 'Building your hybrid base';
   if (isAdvancedStrength(profile)) return 'Strength-led hybrid block';
   return null;

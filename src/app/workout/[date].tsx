@@ -102,7 +102,7 @@ export default function WorkoutDetailScreen() {
           </>
         ) : (
           <View style={styles.completedBanner}>
-            <AppText style={styles.completedText}>✓ Completed — nice work</AppText>
+            <AppText style={styles.completedText}>✓ Completed. Nice work</AppText>
           </View>
         )}
       </View>

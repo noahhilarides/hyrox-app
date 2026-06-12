@@ -114,7 +114,7 @@ export default function PlanScreen() {
           <WeeklyOverviewCard
             structure={weeklyStructure}
             focusAreas={focusAreas}
-            subtitle="Built from your onboarding — volume and focus adjust as you progress."
+            subtitle="Built from your onboarding. Volume and focus adjust as you progress."
           />
 
           <SectionHeader

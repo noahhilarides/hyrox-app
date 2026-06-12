@@ -31,7 +31,7 @@ export function TodayFeaturedWorkout({
         <View style={[styles.card, styles.cardRest]}>
           <Ionicons name="moon-outline" size={28} color={palette.textSecondary} />
           <AppText style={styles.restTitle}>Recovery scheduled</AppText>
-          <AppText style={styles.restBody}>No session today — absorb the work you’ve already put in.</AppText>
+          <AppText style={styles.restBody}>No session today. Absorb the work you’ve already put in.</AppText>
         </View>
       </View>
     );

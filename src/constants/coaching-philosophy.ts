@@ -57,7 +57,7 @@ export const PLAN_SHAPE_BY_DAYS = {
     beginner: ['strength', 'aerobic', 'recovery_optional', 'hybrid', 'long_aerobic'],
     intermediate: ['strength', 'speed', 'hybrid', 'skills', 'long_aerobic'],
     advanced: ['strength', 'speed', 'hybrid', 'skills', 'long_aerobic'],
-    note: 'Five meaningful sessions — recovery only when coaching logic prescribes it.',
+    note: 'Five meaningful sessions. Recovery only when coaching logic prescribes it.',
   },
   sixDay: {
     typical: ['strength', 'speed', 'recovery_optional', 'hybrid', 'skills', 'long_aerobic'],
