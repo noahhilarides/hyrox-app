@@ -45,6 +45,8 @@ export type WorkoutType =
 export interface OnboardingProfile {
   goal: Goal;
   raceDate: string | null;
+  /** Selected HYROX event id from onboarding races catalog. */
+  eventId?: string | null;
   raceName?: string | null;
   raceCity?: string | null;
   hasRacedBefore?: boolean;

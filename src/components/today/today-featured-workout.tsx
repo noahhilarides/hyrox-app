@@ -27,7 +27,7 @@ export function TodayFeaturedWorkout({
   if (!workout) {
     return (
       <View style={styles.section}>
-        <TodaySectionHeader title={sectionTitle} right="Rest day" />
+        <TodaySectionHeader title={sectionTitle} />
         <View style={[styles.card, styles.cardRest]}>
           <Ionicons name="moon-outline" size={28} color={palette.textSecondary} />
           <AppText style={styles.restTitle}>Recovery scheduled</AppText>
@@ -39,7 +39,7 @@ export function TodayFeaturedWorkout({
 
   return (
     <View style={styles.section}>
-      <TodaySectionHeader title={sectionTitle} right="12°C · Dry" />
+      <TodaySectionHeader title={sectionTitle} />
       <Pressable
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

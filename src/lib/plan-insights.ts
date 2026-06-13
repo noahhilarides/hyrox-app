@@ -41,14 +41,19 @@ export function getPlanTitle(profile: OnboardingProfile | null, plan: TrainingPl
   return getPersonalizedPlanTitle(profile, plan);
 }
 
-export function getWeekLabel(plan: TrainingPlan | null): string {
-  if (!plan) return 'Week —';
+export function getCurrentWeekNumber(plan: TrainingPlan | null): number {
+  if (!plan) return 1;
   const created = startOfDay(parseISO(plan.createdAt));
   const now = startOfDay(new Date());
-  const current = Math.min(
+  return Math.min(
     plan.weeksTotal,
     differenceInCalendarWeeks(now, created, { weekStartsOn: 1 }) + 1
   );
+}
+
+export function getWeekLabel(plan: TrainingPlan | null): string {
+  if (!plan) return 'Week —';
+  const current = getCurrentWeekNumber(plan);
   return `Week ${current} of ${plan.weeksTotal}`;
 }
 

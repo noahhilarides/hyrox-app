@@ -40,8 +40,8 @@ export function TodayFeedCard({ module, tall }: TodayFeedCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 260,
-    minHeight: 140,
+    width: 200,
+    minHeight: 200,
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   cardTall: {
-    minHeight: 168,
+    minHeight: 200,
   },
   pressed: {
     opacity: 0.92,

@@ -26,6 +26,7 @@ export function draftToOnboardingProfile(draft: OnboardingDraft): OnboardingProf
   return {
     goal: draft.goal ?? 'hybrid_fitness',
     raceDate: draft.race.date,
+    eventId: draft.race.eventId,
     raceName: draft.race.name,
     raceCity: draft.race.city,
     hasRacedBefore: draft.race.hasRacedBefore ?? undefined,

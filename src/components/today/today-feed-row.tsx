@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { TodayFeedCard } from '@/components/today/today-feed-card';
@@ -8,10 +9,11 @@ import { spacing } from '@/constants/tokens';
 interface TodayFeedRowProps {
   title: string;
   modules: TodayFeedModule[];
+  leadingTile?: ReactNode;
 }
 
-export function TodayFeedRow({ title, modules }: TodayFeedRowProps) {
-  if (modules.length === 0) return null;
+export function TodayFeedRow({ title, modules, leadingTile }: TodayFeedRowProps) {
+  if (modules.length === 0 && !leadingTile) return null;
 
   return (
     <View style={styles.section}>
@@ -20,6 +22,7 @@ export function TodayFeedRow({ title, modules }: TodayFeedRowProps) {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scroll}>
+        {leadingTile}
         {modules.map((module, index) => (
           <TodayFeedCard key={module.id} module={module} tall={index === 0} />
         ))}

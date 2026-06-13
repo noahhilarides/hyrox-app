@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, format, isBefore, parseISO, startOfDay } from 'date-fns';
 
+import { HYROX_RACE_EVENTS } from '@/data/onboarding/races';
 import { getWeeklyStructureLines } from '@/lib/plan-generator';
 import { getPhaseLabel, getTrainingPhase } from '@/lib/plan-insights';
 import type { TrainingPhase } from '@/lib/plan-insights';
@@ -51,6 +52,13 @@ export function getRaceCountdown(profile: OnboardingProfile | null): RaceCountdo
   const weeks = Math.floor(days / 7);
   if (weeks >= 8) return { days, label: `${weeks} weeks to race`, urgent: false };
   return { days, label: `${days} days to race`, urgent: false };
+}
+
+/** Returns the hero image URL for the user's selected race event, if known. */
+export function getRaceImageUrl(profile: OnboardingProfile | null): string | null {
+  const eventId = profile?.eventId;
+  if (!eventId) return null;
+  return HYROX_RACE_EVENTS.find((race) => race.id === eventId)?.imageUrl ?? null;
 }
 
 export function getPersonalizedPlanTitle(

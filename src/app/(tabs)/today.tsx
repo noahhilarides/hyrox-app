@@ -5,33 +5,32 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PlanActionCard } from '@/components/plan/plan-action-card';
 import { TodayCalendarPanel } from '@/components/today/today-calendar-panel';
+import { TodayCountdownTile } from '@/components/today/today-countdown-tile';
 import { TodayFeaturedWorkout } from '@/components/today/today-featured-workout';
 import { TodayFeedRow } from '@/components/today/today-feed-row';
-import { TodayRecentActivity } from '@/components/today/today-recent-activity';
 import { TodayTopHeader } from '@/components/today/today-top-header';
-import { TodayWeekOverview } from '@/components/today/today-week-overview';
-import { TodayWorkoutTypeGrid } from '@/components/today/today-workout-type-grid';
+import { TodayWeekTile } from '@/components/today/today-week-tile';
+import { TodayWeatherTile } from '@/components/today/today-weather-tile';
 import { Screen } from '@/components/ui/screen';
 import { AppText } from '@/components/ui/text';
-import { buildTodayFeedModules } from '@/data/today/feed-modules';
+import { buildTodayFeedModules, type TodayFeedModule } from '@/data/today/feed-modules';
 import { palette, spacing } from '@/constants/tokens';
 import { useApp } from '@/context/app-context';
 import { useGreeting } from '@/hooks/use-greeting';
 import {
-  getCompletedWorkouts,
+  getCurrentWeekNumber,
   getTrainingPhase,
   getWeekLabel,
-  getWeekWorkouts,
   getWorkoutForDate,
   hasActivePlan,
 } from '@/lib/plan-insights';
 import { ProfileAvatarButton } from '@/components/layout/profile-avatar-button';
-import { getFocusAreaLabels, getRaceCountdown } from '@/lib/plan-personalization';
+import { getFocusAreaLabels, getRaceCountdown, getRaceImageUrl } from '@/lib/plan-personalization';
 
 export default function TodayScreen() {
   const router = useRouter();
   const greeting = useGreeting();
-  const { plan, profile, progress, completions, continuePlanFromProfile, resetApp } = useApp();
+  const { plan, profile, progress, continuePlanFromProfile, resetApp } = useApp();
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const [selectedDate, setSelectedDate] = useState(today);
@@ -51,18 +50,11 @@ export default function TodayScreen() {
   );
   const phase = getTrainingPhase(plan);
   const weekLabel = getWeekLabel(plan);
+  const currentWeek = getCurrentWeekNumber(plan);
 
   const raceCountdown = useMemo(() => getRaceCountdown(profile), [profile]);
+  const raceImageUrl = useMemo(() => getRaceImageUrl(profile), [profile]);
   const focusAreas = useMemo(() => getFocusAreaLabels(profile), [profile]);
-
-  const weekWorkouts = useMemo(() => getWeekWorkouts(plan), [plan]);
-  const weekVolumeMinutes = useMemo(
-    () =>
-      weekWorkouts
-        .filter((w) => completions.includes(w.date))
-        .reduce((sum, w) => sum + w.durationMinutes, 0),
-    [weekWorkouts, completions]
-  );
 
   const feedModules = useMemo(
     () => buildTodayFeedModules(profile, phase, raceCountdown, focusAreas),
@@ -76,11 +68,7 @@ export default function TodayScreen() {
     () => feedModules.filter((m) => m.variant === 'tip' || m.variant === 'education' || m.variant === 'recovery'),
     [feedModules]
   );
-
-  const recentCompleted = useMemo(
-    () => getCompletedWorkouts(plan, completions),
-    [plan, completions]
-  );
+  const allInsightModules = useMemo<TodayFeedModule[]>(() => [], []);
 
   const openWorkout = (date: string) => router.push(`/workout/${date}`);
 
@@ -149,21 +137,23 @@ export default function TodayScreen() {
           onOpenWorkout={openWorkout}
         />
 
-        <TodayWeekOverview
-          progress={progress}
-          volumeMinutes={weekVolumeMinutes}
-          streak={progress.currentStreak}
-        />
-
-        <TodayFeedRow title="Insights" modules={insightModules} />
-        <TodayFeedRow title="Training tips" modules={tipModules} />
-
-        <TodayWorkoutTypeGrid onPressCard={() => router.push('/(tabs)/plan')} />
-
-        <TodayRecentActivity
-          workouts={recentCompleted}
-          onOpenWorkout={openWorkout}
-          onSeeAll={() => router.push('/(tabs)/activities')}
+        <TodayFeedRow
+          title="Insights"
+          modules={allInsightModules}
+          leadingTile={
+            <>
+              {raceCountdown ? (
+                <TodayCountdownTile
+                  countdown={raceCountdown}
+                  imageUrl={raceImageUrl}
+                  raceName={profile?.raceName}
+                  raceDate={profile?.raceDate}
+                />
+              ) : null}
+              <TodayWeekTile progress={progress} weekNumber={currentWeek} phase={phase} />
+              <TodayWeatherTile />
+            </>
+          }
         />
       </ScrollView>
     </Screen>

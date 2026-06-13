@@ -9,7 +9,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.noahhilarides.hyrox-app"
+      "bundleIdentifier": "com.noahhilarides.hyrox-app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Rox uses your location to show local weather for your training."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -38,7 +41,13 @@
         }
       ],
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Rox uses your location to show local weather for your training."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
