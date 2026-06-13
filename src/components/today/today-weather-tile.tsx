@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { format, parseISO } from 'date-fns';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
@@ -7,6 +7,23 @@ import { palette, radius, spacing } from '@/constants/tokens';
 import { useWeather } from '@/hooks/use-weather';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const metaIconColor = 'rgba(255,255,255,0.85)';
+
+function MetaRow({
+  prefix,
+  label,
+}: {
+  prefix: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <View style={styles.metaRow}>
+      {prefix}
+      <AppText style={styles.metaText}>{label}</AppText>
+    </View>
+  );
+}
 
 function getWeatherIconName(weatherCode: number, isDay: boolean): IoniconName {
   if (weatherCode === 0 || weatherCode === 1) {
@@ -37,21 +54,6 @@ function getBackgroundColor(weatherCode: number): string {
   }
   if (weatherCode >= 95 && weatherCode <= 99) return '#2D3A4A';
   return '#3B82C4';
-}
-
-function MetaRow({
-  icon,
-  label,
-}: {
-  icon: IoniconName;
-  label: string;
-}) {
-  return (
-    <View style={styles.metaRow}>
-      <Ionicons name={icon} size={10} color="rgba(255,255,255,0.85)" />
-      <AppText style={styles.metaText}>{label}</AppText>
-    </View>
-  );
 }
 
 export function TodayWeatherTile() {
@@ -96,9 +98,32 @@ export function TodayWeatherTile() {
             <Ionicons name={iconName} size={32} color="#fff" style={styles.weatherIcon} />
           </View>
           <View style={styles.metaColumn}>
-            <MetaRow icon="umbrella-outline" label={`${weather.precipProb}%`} />
-            <MetaRow icon="arrow-up" label={sunriseTime} />
-            <MetaRow icon="arrow-down" label={sunsetTime} />
+            <MetaRow
+              prefix={
+                <Ionicons name="umbrella-outline" size={11} color={metaIconColor} />
+              }
+              label={`${weather.precipProb}%`}
+            />
+            <MetaRow
+              prefix={
+                <MaterialCommunityIcons
+                  name="weather-sunset-up"
+                  size={12}
+                  color={metaIconColor}
+                />
+              }
+              label={sunriseTime}
+            />
+            <MetaRow
+              prefix={
+                <MaterialCommunityIcons
+                  name="weather-sunset-down"
+                  size={12}
+                  color={metaIconColor}
+                />
+              }
+              label={sunsetTime}
+            />
           </View>
         </View>
       </View>

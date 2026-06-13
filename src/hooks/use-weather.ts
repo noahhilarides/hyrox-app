@@ -21,8 +21,14 @@ export function useWeather() {
   useEffect(() => {
     async function loadWeather() {
       try {
-        const geoRes = await fetch('https://ipapi.co/json/');
+        const geoRes = await fetch('https://ipwho.is/');
         const geo = await geoRes.json();
+
+        if (geo.success === false) {
+          setError(true);
+          setLoading(false);
+          return;
+        }
 
         const useFahrenheit = fahrenheitCountries.includes(geo.country_code);
         const tempUnit = useFahrenheit ? 'fahrenheit' : 'celsius';
